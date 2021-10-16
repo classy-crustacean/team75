@@ -4,32 +4,51 @@ import time
 import grovepi
 from brickpi3 import *
 
-rLF = 8
-lLF = 3
+rLF = 3
+lLF = 2
 
-delay = 0.02
+delay = 0.01
 
 BP = BrickPi3()
 
-rM = BP.PORT_A
-lM = BP.PORT_D
+rM = BP.PORT_D
+lM = BP.PORT_A
+
+defaultPower = 20
+correction = 5
+
+maxPower = 30
+minPower = -20
+straightPower = 40
+
+rPower = 0
+lPower = 0
 
 try:
     while True:
         try:
-            if grovepi.digitalRead(rLF) == 0:
-                print("right White")
-                BP.set_motor_power(rM, 20)
-            else:
-                print("right Black")
-                BP.set_motor_power(rM, -20)
-           
-            if grovepi.digitalRead(lLF) == 0:
-                print("left White")
-                BP.set_motor_power(lM, 20)
-            else:
-                print("right Black")
-                BP.set_motor_power(lM, -20)
+            # if not (grovepi.digitalRead(rLF) == 0 and grovepi.digitalRead(lLF) == 0):
+            #     maxPower = 10
+            right = grovepi.digitalRead(rLF)
+            left = grovepi.digitalRead(lLF)
+            if (right == 0 and left == 0):
+                if (rPower < straightPower):
+                    rPower += correction
+                if (lPower < straightPower):
+                    lPower += correction
+            elif (right == 1 and left == 0):
+                if (rPower > minPower):
+                    rPower -= correction
+                if (lPower < maxPower):
+                    lPower += correction
+            elif (right == 0 and left == 1):
+                if (lPower > minPower):
+                    lPower -= correction
+                if (rPower < maxPower):
+                    rPower += correction
+
+            BP.set_motor_power(rM, rPower)
+            BP.set_motor_power(lM, lPower)
 
         except IOError as error:
             print(error)
