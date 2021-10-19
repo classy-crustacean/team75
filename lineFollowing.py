@@ -48,6 +48,7 @@ class lineFollower:
         self.ultrasonic = ports['ultrasonic']
         self.touch = ports['touch']
         self.BP.set_sensor_type(self.touch, BP.SENSOR_TYPE.TOUCH)
+        time.sleep(5)
     
     def stop(self):
         try:
@@ -108,16 +109,16 @@ class lineFollower:
         self.changePower(self.motors['left'], -reversePower)
     
     def openLatch(self):
-        self.setPosition(self.motors['latch']['position'] == 0)
+        self.setPosition(self.motors['latch'], 0)
 
     def closeLatch(self):
-        self.setPosition(self.motors['latch']['position'] == 90)
+        self.setPosition(self.motors['latch'],  90)
 
     def openCable(self):
-        self.setPosition(self.motors['cable']['position'] == -90)
+        self.setPosition(self.motors['cable'],  0)
 
     def closeCable(self):
-        self.setPosition(self.motors['cable']['position'] == 0)
+        self.setPosition(self.motors['cable'], 90)
 
     def getTouch(self):
         try:
@@ -166,7 +167,7 @@ class lineFollower:
                 time.sleep(delay)
 
         except KeyboardInterrupt:
-            self.reset()
+            self.stop()
     
     def branch(self):
         try:
@@ -213,17 +214,19 @@ class lineFollower:
     
     def restart(self):
         try:
-            self.brake()
+            # self.brake()
             self.closeLatch()
             self.openCable()
+            # input("press Enter to close cable")
             # while the touch sensor isn't pressed, do nothing
             while self.getTouch() == 0:
-                time.sleep(delay)
+                time.sleep(.1)
             self.closeCable()
             time.sleep(1)
+            # input("press Enter to continue")
             # while the touch sensor isn't pressed, do nothing
             while self.getTouch() == 0:
-                time.sleep(delay)
+                time.sleep(.1)
 
         except KeyboardInterrupt:
             self.stop()

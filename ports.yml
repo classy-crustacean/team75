@@ -1,8 +1,8 @@
 # Motors
 right drive motor: D
 left drive motor: A
-latch motor: C
-cable motor: B
+latch motor: B
+cable motor: C
 
 # Sensors
 right line finder: 3
