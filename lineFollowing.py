@@ -16,13 +16,17 @@ correction = 5
 
 # Maximum power in curves 
 maxPower = 30
+maxSpeed = 10 # mm/s
 # Maximum power in straightaways
 straightPower = 40
+straightSpeed = 20 # mm/s
 
 # Maximum power in reverse
 reversePower = 5
+reverseSpeed = 5 # mm/s
 
 hallToCargoDistance = 125
+wheelDiameter = 80 # mm
 
 radii = {1: 127.0,
          2: 44.45,
@@ -31,6 +35,7 @@ radii = {1: 127.0,
 class lineFollower:
 
     def __init__(self, BP, ports):
+        print("initializing line follower")
         self.BP = BP
         self.motors = {}
         self.motors['right'] = {'port': ports['right drive motor'],
@@ -48,7 +53,9 @@ class lineFollower:
         self.ultrasonic = ports['ultrasonic']
         self.touch = ports['touch']
         self.BP.set_sensor_type(self.touch, BP.SENSOR_TYPE.TOUCH)
+        self.degPermm = 360 / (wheelDiameter * math.pi)
         time.sleep(5)
+        print("line follower initialized")
     
     def stop(self):
         try:
@@ -70,9 +77,12 @@ class lineFollower:
         except IOError as error:
             print(error)
     
+    def mmDeg(self, millimeters):
+        return int(millimeters * self.degPermm)
+    
     def forwardPrecise(self, millimeters):
         try:
-            degrees = int(millimeters / (80 * math.pi) * 360)
+            degrees = self.mmDeg(millimeters)
             self.BP.set_motor_position_relative(self.motors['right']['port'], degrees)
             self.BP.set_motor_position_relative(self.motors['left']['port'], degrees)
         except IOError as error:
@@ -83,30 +93,46 @@ class lineFollower:
             self.setPower(motor, motor['power'] + correction)
         elif (motor['power'] > targetPower):
             self.setPower(motor, motor['power'] - correction)
-    
+
+    def setSpeed(self, motor, targetSpeed):
+        try:
+            self.BP.set_motor_dps(motor['port'], self.mmDeg(targetSpeed))
+        except IOError as error:
+            print(error)
+
     def straight(self):
-        self.changePower(self.motors['right'], straightPower)
-        self.changePower(self.motors['left'], straightPower)
-        if (self.motors['right']['power'] < self.motors['left']['power']):
-            self.changePower(self.motors['right'], self.motors['left']['power'])
-        elif (self.motors['right']['power'] > self.motors['left']['power']):
-            self.changePower(self.motors['left'], self.motors['right']['power'])
+        self.setSpeed(self.motors['right'], straightSpeed)
+        self.setSpeed(self.motors['left'], straightSpeed)
+        # self.changePower(self.motors['right'], straightPower)
+        # self.changePower(self.motors['left'], straightPower)
+        # if (self.motors['right']['power'] < self.motors['left']['power']):
+            # self.changePower(self.motors['right'], self.motors['left']['power'])
+        # elif (self.motors['right']['power'] > self.motors['left']['power']):
+            # self.changePower(self.motors['left'], self.motors['right']['power'])
 
     def right(self):
-        self.changePower(self.motors['right'], -maxPower)
-        self.changePower(self.motors['left'], maxPower)
+        self.setSpeed(self.motors['right'], -maxSpeed)
+        self.setSpeed(self.motors['left'], maxSpeed)
+        # self.changePower(self.motors['right'], -maxPower)
+        # self.changePower(self.motors['left'], maxPower)
 
     def left(self):
-        self.changePower(self.motors['right'], maxPower)
-        self.changePower(self.motors['left'], -maxPower)
+        self.setSpeed(self.motors['right'], maxSpeed)
+        self.setSpeed(self.motors['left'], -maxSpeed)
+        # self.changePower(self.motors['right'], maxPower)
+        # self.changePower(self.motors['left'], -maxPower)
 
     def brake(self):
-        self.setPower(self.motors['right'], 0)
-        self.setPower(self.motors['left'], 0)
+        self.setSpeed(self.motors['right'], 0)
+        self.setSpeed(self.motors['left'], 0)
+        # self.setPower(self.motors['right'], 0)
+        # self.setPower(self.motors['left'], 0)
     
     def reverse(self):
-        self.changePower(self.motors['right'], -reversePower)
-        self.changePower(self.motors['left'], -reversePower)
+        self.setSpeed(self.motors['right'], -reverseSpeed)
+        self.setSpeed(self.motors['left'], -reverseSpeed)
+        # self.changePower(self.motors['right'], -reversePower)
+        # self.changePower(self.motors['left'], -reversePower)
     
     def openLatch(self):
         self.setPosition(self.motors['latch'], 0)
@@ -148,8 +174,6 @@ class lineFollower:
 
         try:
             while True:
-                # if not (grovepi.digitalRead(rLF) == 0 and grovepi.digitalRead(lLF) == 0):
-                #     maxPower = 10
                 right = self.getRightLine()
                 left = self.getLeftLine()
                 if (self.getHall() == 0):
@@ -214,16 +238,14 @@ class lineFollower:
     
     def restart(self):
         try:
-            # self.brake()
+            self.brake()
             self.closeLatch()
             self.openCable()
-            # input("press Enter to close cable")
             # while the touch sensor isn't pressed, do nothing
             while self.getTouch() == 0:
                 time.sleep(.1)
             self.closeCable()
             time.sleep(1)
-            # input("press Enter to continue")
             # while the touch sensor isn't pressed, do nothing
             while self.getTouch() == 0:
                 time.sleep(.1)

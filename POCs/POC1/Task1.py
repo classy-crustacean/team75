@@ -13,4 +13,3 @@ LF = lineFollowing.lineFollower(BP, ports)
 LF.restart()
 
 LF.followLine()
-
