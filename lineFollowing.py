@@ -2,6 +2,7 @@
 
 from os import setpriority
 import time
+import math
 import grovepi
 from brickpi3 import *
 
@@ -19,7 +20,13 @@ maxPower = 30
 straightPower = 40
 
 # Maximum power in reverse
-reversePower = 10
+reversePower = 5
+
+hallToCargoDistance = 125
+
+radii = {1: 127.0,
+         2: 44.45,
+         3: 38.1}
 
 class lineFollower:
 
@@ -62,6 +69,14 @@ class lineFollower:
         except IOError as error:
             print(error)
     
+    def forwardPrecise(self, millimeters):
+        try:
+            degrees = int(millimeters / (80 * math.pi) * 360)
+            self.BP.set_motor_position_relative(self.motors['right']['port'], degrees)
+            self.BP.set_motor_position_relative(self.motors['left']['port'], degrees)
+        except IOError as error:
+            print(error)
+    
     def changePower(self, motor, targetPower):
         if (motor['power'] < targetPower):
             self.setPower(motor, motor['power'] + correction)
@@ -93,13 +108,13 @@ class lineFollower:
         self.changePower(self.motors['left'], -reversePower)
     
     def openLatch(self):
-        self.setPosition(self.motors['latch']['position'] == 90)
-
-    def closeLatch(self):
         self.setPosition(self.motors['latch']['position'] == 0)
 
+    def closeLatch(self):
+        self.setPosition(self.motors['latch']['position'] == 90)
+
     def openCable(self):
-        self.setPosition(self.motors['cable']['position'] == 90)
+        self.setPosition(self.motors['cable']['position'] == -90)
 
     def closeCable(self):
         self.setPosition(self.motors['cable']['position'] == 0)
@@ -183,13 +198,13 @@ class lineFollower:
         except KeyboardInterrupt:
             self.stop()
     
-    def dropOff(self):
-        hall = self.hall
+    def dropOff(self, shape):
         try:
             self.brake()
             while (self.getHall() == 1):
                 self.reverse()
             self.brake()
+            self.forwardPrecise(hallToCargoDistance + radii[shape])
             self.openLatch()
             self.openCable()
 
@@ -200,6 +215,7 @@ class lineFollower:
         try:
             self.brake()
             self.closeLatch()
+            self.openCable()
             # while the touch sensor isn't pressed, do nothing
             while self.getTouch() == 0:
                 time.sleep(delay)
