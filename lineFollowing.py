@@ -7,7 +7,7 @@ import grovepi
 from brickpi3 import *
 
 # Loop delay, controls how often the main loop is run
-delay = 0.01
+delay = 0.001
 
 # Default motor power
 defaultPower = 0
@@ -16,14 +16,14 @@ correction = 5
 
 # Maximum power in curves 
 maxPower = 30
-maxSpeed = 10 # mm/s
+maxSpeed = 50 # mm/s
 # Maximum power in straightaways
 straightPower = 40
-straightSpeed = 20 # mm/s
+straightSpeed = 60 # mm/s
 
 # Maximum power in reverse
 reversePower = 5
-reverseSpeed = 5 # mm/s
+reverseSpeed = 20 # mm/s
 
 hallToCargoDistance = 125
 wheelDiameter = 80 # mm
@@ -54,7 +54,7 @@ class lineFollower:
         self.touch = ports['touch']
         self.BP.set_sensor_type(self.touch, BP.SENSOR_TYPE.TOUCH)
         self.degPermm = 360 / (wheelDiameter * math.pi)
-        time.sleep(5)
+        time.sleep(3)
         print("line follower initialized")
     
     def stop(self):
@@ -96,7 +96,7 @@ class lineFollower:
 
     def setSpeed(self, motor, targetSpeed):
         try:
-            self.BP.set_motor_dps(motor['port'], self.mmDeg(targetSpeed))
+            self.BP.set_motor_dps(motor['port'], -self.mmDeg(targetSpeed))
         except IOError as error:
             print(error)
 
@@ -111,14 +111,14 @@ class lineFollower:
             # self.changePower(self.motors['left'], self.motors['right']['power'])
 
     def right(self):
-        self.setSpeed(self.motors['right'], -maxSpeed)
+        self.setSpeed(self.motors['right'], -0.5 * maxSpeed)
         self.setSpeed(self.motors['left'], maxSpeed)
         # self.changePower(self.motors['right'], -maxPower)
         # self.changePower(self.motors['left'], maxPower)
 
     def left(self):
         self.setSpeed(self.motors['right'], maxSpeed)
-        self.setSpeed(self.motors['left'], -maxSpeed)
+        self.setSpeed(self.motors['left'], -0.5 * maxSpeed)
         # self.changePower(self.motors['right'], maxPower)
         # self.changePower(self.motors['left'], -maxPower)
 
