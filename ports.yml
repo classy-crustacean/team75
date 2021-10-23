@@ -1,12 +1,12 @@
 # Motors
-right drive motor: B
-left drive motor: A
-latch motor: D
-cable motor: C
+right drive motor: D
+left drive motor: B
+latch motor: C
+cable motor: A
 
 # Sensors
-right line finder: 2
-left line finder: 4
-hall effect: 3
+right line finder: 3
+left line finder: 8
+hall effect: 2
 ultrasonic: 5
-touch: 4
+touch: 1

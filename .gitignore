@@ -1,4 +1,5 @@
 brickpi3.py
 grovepi.py
 __pycache__
+*.wav
 

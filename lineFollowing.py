@@ -16,17 +16,17 @@ correction = 5
 
 # Maximum power in curves 
 maxPower = 30
-maxSpeed = 50 # mm/s
+maxSpeed = 100 # mm/s
 # Maximum power in straightaways
 straightPower = 40
-straightSpeed = 60 # mm/s
+straightSpeed = 120 # mm/s
 
 # Maximum power in reverse
 reversePower = 5
-reverseSpeed = 20 # mm/s
+reverseSpeed = 40 # mm/s
 
-hallToCargoDistance = 125
-wheelDiameter = 80 # mm
+hallToCargoDistance = 150
+wheelDiameter = 60 # mm
 
 radii = {1: 127.0,
          2: 44.45,
@@ -54,7 +54,6 @@ class lineFollower:
         self.touch = ports['touch']
         self.BP.set_sensor_type(self.touch, BP.SENSOR_TYPE.TOUCH)
         self.degPermm = 360 / (wheelDiameter * math.pi)
-        time.sleep(3)
         print("line follower initialized")
     
     def stop(self):
@@ -74,6 +73,7 @@ class lineFollower:
         try:
             self.BP.set_motor_position(motor['port'], position)
             motor['position'] = position
+            time.sleep(0.25)
         except IOError as error:
             print(error)
     
@@ -81,12 +81,10 @@ class lineFollower:
         return int(millimeters * self.degPermm)
     
     def forwardPrecise(self, millimeters):
-        try:
-            degrees = self.mmDeg(millimeters)
-            self.BP.set_motor_position_relative(self.motors['right']['port'], degrees)
-            self.BP.set_motor_position_relative(self.motors['left']['port'], degrees)
-        except IOError as error:
-            print(error)
+        t = millimeters / straightSpeed
+        self.straight()
+        time.sleep(t)
+        self.brake()
     
     def changePower(self, motor, targetPower):
         if (motor['power'] < targetPower):
@@ -226,10 +224,10 @@ class lineFollower:
     def dropOff(self, shape):
         try:
             self.brake()
-            while (self.getHall() == 1):
-                self.reverse()
+            # self.forwardPrecise(hallToCargoDistance + radii[shape])
+            self.straight()
+            time.sleep(0.1)
             self.brake()
-            self.forwardPrecise(hallToCargoDistance + radii[shape])
             self.openLatch()
             self.openCable()
 
