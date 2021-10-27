@@ -77,8 +77,8 @@ class lineFollower:
         except IOError as error:
             print(error)
     
-    def mmDeg(self, millimeters):
-        return int(millimeters * self.degPermm)
+    def mmdeg(self, millimeters):
+        return int(millimeters * self.degpermm)
     
     def forwardPrecise(self, millimeters):
         t = millimeters / straightSpeed

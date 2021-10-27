@@ -1,0 +1,26 @@
+# Motors
+right drive motor: D
+left drive motor: B
+front drive motor: A
+latch motor: C
+
+# Sensors
+line finders:
+  - 8
+  - 7
+  - 4
+  - 2
+  - 3
+hall effect sensor: 5
+ultrasonic sensor: 6
+touch sensor: 4
+
+# Dimensions, measured in mm
+rear wheel diameter: 60
+front wheel diameter: 60
+
+# PID
+Kp: 0.1
+Ki: 0.1
+Kd: 0.1
+base motor power: 50
