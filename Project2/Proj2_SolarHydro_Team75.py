@@ -1,5 +1,7 @@
 import math
+import yaml
 
+# monkey code dictionaries
 pumps = {'cheap': {'efficiency': 0.80,
                    20: 200,
                    30: 220,
@@ -83,4 +85,33 @@ pipes = {
     'nice'         :{'frictionFactor':.01 , 0.10:2.16, .25:2.58, .50:5.55, .75:14.0, 1.00:29, 1.25:55, 1.50:94 , 1.75:148, 2.00:219, 2.25:311, 2.50:426, 2.75:567, 3.00:735 , },
     'outstanding'  :{'frictionFactor':.005, 0.10:2.70, .25:3.32, .50:6.94, .75:17.0, 1.00:37, 1.25:69, 1.50:117, 1.75:185, 2.00:274, 2.25:389, 2.50:533, 2.75:708, 3.00:919 , },
     'glorious'     :{'frictionFactor':.002, 0.10:2.97, .25:3.55, .50:7.64, .75:19.0, 1.00:40, 1.25:76, 1.50:129, 1.75:203, 2.00:302, 2.25:428, 2.50:586, 2.75:779, 3.00:1011, },
-}
+    }
+
+# inputs, hard coded for now
+Eout = 120
+p  = 1000 # density of water, kg per m^3
+t  = 12   # time, in hours for both filling and draining
+Qt = 30   # turbine volumetric flow
+Qp = 65   # pump volumetric flow
+Nt = .92  # turbine efficiency
+Np = .9   # pump efficiency
+g  = 9.81 # gravity
+
+# other inputs
+f     = .05 # pipe friction
+L     = 75 # pipe length for all 3 sections
+D     = 2 # pipe diameter
+E1    = .15 # bend constant 1
+E2    = .2 # bend constant 2
+# area1 = # buildable are of zone 1
+# area3 = # build area of zone 3
+
+# defining other equations
+def M (Qt, p, t):
+    return (Qt * p * t)
+def Vout (Qt, D):
+    return ((4 * Qt) / (D * D * math.pi))
+def Vin (Qp, D):
+    return ((4 * Qp) / (D * D * math.pi))
+
+
