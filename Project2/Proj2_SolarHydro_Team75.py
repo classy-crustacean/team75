@@ -35,7 +35,7 @@ pipes = {
     }
 
 # inputs, hard coded for now
-energyOut = 120
+energyOut = 120 # mwh
 waterDensity  = 1000 # density of water, kg per m^3
 fillTime  = 12   # time, in hours for both filling and draining
 turbineFlow = 30   # turbine volumetric flow
@@ -50,15 +50,19 @@ L     = 75 # pipe length for all 3 sections
 D     = 2 # pipe diameter
 E1    = .15 # bend constant 1
 E2    = .2 # bend constant 2
-# area1 = # buildable are of zone 1
+# area1 = # buildable area of zone 1
 # area3 = # build area of zone 3
 
+# big monstrous equations
+def energyIn(energyOut, pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2, bendConstant3, mass, pumpEfficiency, turbineEfficiency):
+    energy = ((energyOut / turbineEfficiency) + (mass / 2) * (velocityOut * velocityOut + velocityIn * velocityIn) * (pipeFriction * (pipeLength / pipeDiameter) + bendConstant1 + bendConstant2 + bendConstant3)) / pumpEfficiency
+    return energy
 # defining other equations
-def M (Qt, p, t):
+def mass (Qt, p, t):
     return (Qt * p * t)
-def Vout (Qt, D):
+def velocityOut (Qt, D):
     return ((4 * Qt) / (D * D * math.pi))
-def Vin (Qp, D):
+def velocityIn (Qp, D):
     return ((4 * Qp) / (D * D * math.pi))
 
 def calcEfficiency(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2):
@@ -132,4 +136,6 @@ def site3cost():
     cost += ((225/2)(225/2) * math.pi * .3) # reservoir area development, assumed to be entire site
     cost += ((225/2)(225/2) * math.pi * 1.6) # tree replanting
     return cost
+
+# big monstrous equations
 
