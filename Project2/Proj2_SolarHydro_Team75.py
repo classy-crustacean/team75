@@ -127,6 +127,27 @@ def getEfficiencyTable():
     
     return data
 
-print(getEfficiencyTable())
+def getUserInput():
+    print("""Choices for site:
+    1. Zone 1
+    3. Zone 3""")
+    sitesInput = input("Enter numbers for zones to consider: ")
+    sites = []
+    if sitesInput.__contains__('1'):
+        sites.append(1)
+    if sitesInput.__contains__('3'):
+        sites.append(3)
+    if sitesInput.__contains__('2'):
+        print("Site 2 is on a native american burial ground: You will run out of money in legal fees before you finish; Choose another site.")
+        exit()
+    
+    try:
+        budget = int(input("What is your budget? (If no budget, just press enter): "))
+    except ValueError:
+        budget = 10000000 # really big value that will be bigger than any price
+    
+    return {'sites': sites, 'budget': budget}
 
+userInput = getUserInput()
 
+print(userInput)
