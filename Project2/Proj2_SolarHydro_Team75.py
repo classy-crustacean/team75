@@ -151,3 +151,39 @@ def getUserInput():
 userInput = getUserInput()
 
 print(userInput)
+
+# cost calculations
+def pumpCost(grade, performanceRating, flowRate):
+    cost = flowRate * (pumps[grade[performanceRating]])
+    return cost
+
+def turbineCost(grade, performanceRating, flowRate):
+    cost = flowRate * (turbines[grade[flowRate]])
+    return cost
+
+def fittingCost(angle, diameter):
+    cost = bends[angle[diameter]]
+    return cost
+
+def pipeCost(grade, diameter, length):
+    cost = length * (grade[diameter])
+    return cost
+
+# site 1 calculations
+def site1cost():
+    # costs for land development
+    cost = 0
+    cost += 40,000 # access road
+    cost += (600 * 600 * .25) # reservoir area development, assumed to be entire site
+    cost += 10,000 # random testing 
+    return cost
+
+# site 3 calculations
+def site3cost():
+    # cost of land development
+    cost = 0
+    cost += 150,000 # access road
+    cost += ((225/2)(225/2) * math.pi * .3) # reservoir area development, assumed to be entire site
+    cost += ((225/2)(225/2) * math.pi * 1.6) # tree replanting
+    return cost
+
