@@ -1,6 +1,6 @@
 import math
-import yaml
 import pandas as pd
+
 
 # monkey code dictionaries
 pumps = {
@@ -35,35 +35,41 @@ pipes = {
     }
 
 # inputs, hard coded for now
-energyOut = 120 # mwh
+depth = 10 # depth of the reservoir in meters
+energyOut = 120 # mwh required
 waterDensity  = 1000 # density of water, kg per m^3
 fillTime  = 12   # time, in hours for both filling and draining
 turbineFlow = 30   # turbine volumetric flow
 pumpFlow = 65   # pump volumetric flow
 turbineEfficiency = .92  # turbine efficiency
 pumpEfficiency = .9   # pump efficiency
-g  = 9.81 # gravity
-
-# other inputs
-f     = .05 # pipe friction
-L     = 75 # pipe length for all 3 sections
-D     = 2 # pipe diameter
-E1    = .15 # bend constant 1
-E2    = .2 # bend constant 2
-# area1 = # buildable area of zone 1
-# area3 = # build area of zone 3
+g  = 9.81 # gravity, for the love of god dont make this an input
+pipeFriction = .05 # pipe friction
+pipeLength = 75 # total pipe length
+pipeDiameter = 2 # pipe diameter
+bendConstant1 = .15 # bend constant 1
+bendConstant2 = .2  # bend constant 2
+bendConstant3 = 0 # bend constant 3
 
 # big monstrous equations
-def energyIn(energyOut, pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2, bendConstant3, mass, pumpEfficiency, turbineEfficiency):
+def energyIn(energyOut, pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2, bendConstant3, mass, pumpEfficiency, turbineEfficiency, velocityOut, velocityIn):
     energy = ((energyOut / turbineEfficiency) + (mass / 2) * (velocityOut * velocityOut + velocityIn * velocityIn) * (pipeFriction * (pipeLength / pipeDiameter) + bendConstant1 + bendConstant2 + bendConstant3)) / pumpEfficiency
     return energy
-# defining other equations
-def mass (Qt, p, t):
-    return (Qt * p * t)
-def velocityOut (Qt, D):
-    return ((4 * Qt) / (D * D * math.pi))
-def velocityIn (Qp, D):
-    return ((4 * Qp) / (D * D * math.pi))
+
+# mass equation
+def mass (turbineFlow, waterDensity, t):
+    return turbineFlow * waterDensity * t
+
+# velocity out
+def velocityOut (turbineFlow, diameter):
+    return (4 * turbineFlow) / (diameter * diameter * math.pi)
+
+# velocity in
+def velocityIn (pumpFlow, diameter):
+    return (4 * pumpFlow) / (diameter * diameter * math.pi)
+
+# area of reservoir
+reservoirArea = (mass / waterDensity) / depth
 
 def calcEfficiency(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2):
     print(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2)
@@ -120,22 +126,19 @@ def pipeCost(grade, diameter, length):
     return cost
 
 # site 1 calculations
-def site1cost():
+def site1cost(reservoirArea):
     # costs for land development
     cost = 0
     cost += 40,000 # access road
-    cost += (600 * 600 * .25) # reservoir area development, assumed to be entire site
+    cost += (reservoirArea * .25) # reservoir area
     cost += 10,000 # random testing 
     return cost
 
 # site 3 calculations
-def site3cost():
+def site3cost(reservoirArea):
     # cost of land development
     cost = 0
     cost += 150,000 # access road
-    cost += ((225/2)(225/2) * math.pi * .3) # reservoir area development, assumed to be entire site
-    cost += ((225/2)(225/2) * math.pi * 1.6) # tree replanting
+    cost += (reservoirArea * .3) # reservoir area development
+    cost += (reservoirArea * 1.6) # tree replanting
     return cost
-
-# big monstrous equations
-
