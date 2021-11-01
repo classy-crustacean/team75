@@ -69,11 +69,22 @@ def velocityIn (pumpFlow, diameter):
     return (4 * pumpFlow) / (diameter * diameter * math.pi)
 
 # area of reservoir
-reservoirArea = (mass / waterDensity) / depth
+def reservoirArea (mass, waterDensity):
+    return (mass / waterDensity) / depth
 
+# joules to mwh
+def mwh(joules):
+    return joules * 2.777E-10
+
+# mwh to joules
+def joules(mwh):
+    return mwh * 3.6E9
+
+# honestly idk what this is
 def calcEfficiency(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2):
     print(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2)
 
+# nor this
 def getEfficiencyTable():
     data = pd.DataFrame(columns=['pump', 'turbine', 'pipe'])
     for pump in pumps:
@@ -83,6 +94,7 @@ def getEfficiencyTable():
     
     return data
 
+# Joe's magic
 def getUserInput():
     print("""Choices for site:
     1. Zone 1
@@ -142,3 +154,12 @@ def site3cost(reservoirArea):
     cost += (reservoirArea * .3) # reservoir area development
     cost += (reservoirArea * 1.6) # tree replanting
     return cost
+# diagnostics
+print(mass(turbineFlow, waterDensity, fillTime))
+print(velocityIn(pumpFlow, pipeDiameter))
+print(velocityOut(turbineFlow, pipeDiameter))
+# running big equation
+print(mwh((energyIn(joules(energyOut), pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2, bendConstant3, 
+               mass(turbineFlow, waterDensity, fillTime), pumpEfficiency, turbineEfficiency, 
+               velocityOut(turbineFlow, pipeDiameter), velocityIn(pumpFlow, pipeDiameter),
+               ))))
