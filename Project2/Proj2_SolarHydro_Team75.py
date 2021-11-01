@@ -53,7 +53,9 @@ bendConstant3 = 0 # bend constant 3
 
 # big monstrous equations
 def energyIn(energyOut, pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2, bendConstant3, mass, pumpEfficiency, turbineEfficiency, velocityOut, velocityIn):
-    energy = ((energyOut / turbineEfficiency) + (mass / 2) * (velocityOut * velocityOut + velocityIn * velocityIn) * (pipeFriction * (pipeLength / pipeDiameter) + bendConstant1 + bendConstant2 + bendConstant3)) / pumpEfficiency
+    energy = (
+        (energyOut / turbineEfficiency) + (1.07E9 / 2) * (velocityOut * velocityOut + velocityIn * velocityIn) * (pipeFriction * (pipeLength / pipeDiameter) + bendConstant1 + bendConstant2 + bendConstant3)
+        ) / pumpEfficiency
     return energy
 
 # mass equation
@@ -74,7 +76,7 @@ def reservoirArea (mass, waterDensity):
 
 # joules to mwh
 def mwh(joules):
-    return joules / (10E6 * 60 * 60)
+    return joules / (1E6 * 60 * 60)
 
 # mwh to joules
 def joules(mwh):
@@ -163,7 +165,7 @@ print('mass:', mass(turbineFlow, waterDensity, fillTime))
 print('velocity in:', velocityIn(pumpFlow, pipeDiameter))
 print('velocity out:', velocityOut(turbineFlow, pipeDiameter))
 # running big equation
-print('energy in :', mwh((energyIn(joules(energyOut), pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2, bendConstant3, 
-               mass(turbineFlow, waterDensity, seconds(fillTime)), pumpEfficiency, turbineEfficiency, 
-               velocityOut(turbineFlow, pipeDiameter), velocityIn(pumpFlow, pipeDiameter),
+print('energy in :', (mwh(energyIn(joules(energyOut), pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2, bendConstant3, 
+               mass(turbineFlow, waterDensity, fillTime), pumpEfficiency, turbineEfficiency, 
+               velocityIn(pumpFlow, pipeDiameter), velocityOut(turbineFlow, pipeDiameter),
                ))))
