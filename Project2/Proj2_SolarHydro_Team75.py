@@ -38,7 +38,7 @@ pipes = {
 depth = 10 # depth of the reservoir in meters
 energyOut = 120 # mwh required
 waterDensity  = 1000 # density of water, kg per m^3
-fillTime  = 12   # time, in hours for both filling and draining
+fillTime  = 4.58   # time, in hours for both filling and draining
 turbineFlow = 30   # turbine volumetric flow
 pumpFlow = 65   # pump volumetric flow
 turbineEfficiency = .92  # turbine efficiency
@@ -74,11 +74,15 @@ def reservoirArea (mass, waterDensity):
 
 # joules to mwh
 def mwh(joules):
-    return joules * 2.777E-10
+    return joules / (10E6 * 60 * 60)
 
 # mwh to joules
 def joules(mwh):
     return mwh * 3.6E9
+
+# hours in time to seconds
+def seconds(hours):
+    return hours * 60 * 60
 
 # honestly idk what this is
 def calcEfficiency(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2):
@@ -155,11 +159,11 @@ def site3cost(reservoirArea):
     cost += (reservoirArea * 1.6) # tree replanting
     return cost
 # diagnostics
-print(mass(turbineFlow, waterDensity, fillTime))
-print(velocityIn(pumpFlow, pipeDiameter))
-print(velocityOut(turbineFlow, pipeDiameter))
+print('mass:', mass(turbineFlow, waterDensity, fillTime))
+print('velocity in:', velocityIn(pumpFlow, pipeDiameter))
+print('velocity out:', velocityOut(turbineFlow, pipeDiameter))
 # running big equation
-print(mwh((energyIn(joules(energyOut), pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2, bendConstant3, 
-               mass(turbineFlow, waterDensity, fillTime), pumpEfficiency, turbineEfficiency, 
+print('energy in :', mwh((energyIn(joules(energyOut), pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2, bendConstant3, 
+               mass(turbineFlow, waterDensity, seconds(fillTime)), pumpEfficiency, turbineEfficiency, 
                velocityOut(turbineFlow, pipeDiameter), velocityIn(pumpFlow, pipeDiameter),
                ))))
