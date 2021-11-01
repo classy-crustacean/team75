@@ -4,16 +4,26 @@ left drive motor: B
 front drive motor: A
 latch motor: C
 
-# Sensors
-line finders:
-  - 8
-  - 7
-  - 4
-  - 2
-  - 3
+# GrovePi Sensors
 hall effect sensor: 5
 ultrasonic sensor: 6
+line finders:
+  - 2
+  - 3
+line finder positions:
+  - 0
+  - 6
+
+# BrickPi Sensors
 touch sensor: 4
+color line sensors:
+  - 1
+  - 2
+  - 3
+color line sensor positions:
+  - 2
+  - 3
+  - 4
 
 # Dimensions, measured in mm
 rear wheel diameter: 60
@@ -24,3 +34,4 @@ Kp: 0.1
 Ki: 0.1
 Kd: 0.1
 base motor power: 50
+max line value: 64
