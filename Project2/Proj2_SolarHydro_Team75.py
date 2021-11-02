@@ -4,6 +4,7 @@ import math
 pumpGrades    = ('cheap', 'value', 'standard', 'high-grade', 'premium')
 turbineGrades = ('meh', 'good', 'fine', 'superb', 'mondo')
 pipeGrades    = ('salvage', 'questionable', 'better', 'nice', 'outstanding', 'glorious')
+pipeDiameters = (0.10, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00)
 
 pumps = {
     'cheap'     : {'efficiency': 0.80, 20: 200, 30: 220, 40: 242, 50: 266, 60: 293, 70: 322, 80: 354, 90: 390, 100: 429, 110: 472, 120: 519},
@@ -28,12 +29,12 @@ bends = {
     90: {'pipeLoss': .30, 0.10:1.28, 0.25:1.90, 0.50:7.00, 0.75:18, 1.00:41, 1.25:80, 1.50:137, 1.75:216, 2.00:322, 2.25:458, 2.50:628, 2.75:835, 3.00:1084}
     }
 pipes = {
-    'salvage'      :{'frictionFactor':.05 , 0.10:1.00, .25:1.20, .50:2.57, .75:6.30, 1.00:14, 1.25:26, 1.50:43 , 1.75:68 , 2.00:102, 2.25:144, 2.50:197, 2.75:262, 3.00:340},
-    'questionable' :{'frictionFactor':.03 , 0.10:1.20, .25:1.44, .50:3.08, .75:7.56, 1.00:16, 1.25:31, 1.50:52 , 1.75:82 , 2.00:122, 2.25:173, 2.50:237, 2.75:315, 3.00:408},
-    'better'       :{'frictionFactor':.02 , 0.10:1.44, .25:1.72, .50:3.70, .75:9.07, 1.00:20, 1.25:37, 1.50:63 , 1.75:98 , 2.00:146, 2.25:208, 2.50:284, 2.75:378, 3.00:490},
-    'nice'         :{'frictionFactor':.01 , 0.10:2.16, .25:2.58, .50:5.55, .75:14.0, 1.00:29, 1.25:55, 1.50:94 , 1.75:148, 2.00:219, 2.25:311, 2.50:426, 2.75:567, 3.00:735},
-    'outstanding'  :{'frictionFactor':.005, 0.10:2.70, .25:3.32, .50:6.94, .75:17.0, 1.00:37, 1.25:69, 1.50:117, 1.75:185, 2.00:274, 2.25:389, 2.50:533, 2.75:708, 3.00:919},
-    'glorious'     :{'frictionFactor':.002, 0.10:2.97, .25:3.55, .50:7.64, .75:19.0, 1.00:40, 1.25:76, 1.50:129, 1.75:203, 2.00:302, 2.25:428, 2.50:586, 2.75:779, 3.00:1011}
+    'salvage'      :{'frictionFactor':.05 , 0.10:1.00, 0.25:1.20, 0.50:2.57, 0.75:6.30, 1.00:14, 1.25:26, 1.50:43 , 1.75:68 , 2.00:102, 2.25:144, 2.50:197, 2.75:262, 3.00:340},
+    'questionable' :{'frictionFactor':.03 , 0.10:1.20, 0.25:1.44, 0.50:3.08, 0.75:7.56, 1.00:16, 1.25:31, 1.50:52 , 1.75:82 , 2.00:122, 2.25:173, 2.50:237, 2.75:315, 3.00:408},
+    'better'       :{'frictionFactor':.02 , 0.10:1.44, 0.25:1.72, 0.50:3.70, 0.75:9.07, 1.00:20, 1.25:37, 1.50:63 , 1.75:98 , 2.00:146, 2.25:208, 2.50:284, 2.75:378, 3.00:490},
+    'nice'         :{'frictionFactor':.01 , 0.10:2.16, 0.25:2.58, 0.50:5.55, 0.75:14.0, 1.00:29, 1.25:55, 1.50:94 , 1.75:148, 2.00:219, 2.25:311, 2.50:426, 2.75:567, 3.00:735},
+    'outstanding'  :{'frictionFactor':.005, 0.10:2.70, 0.25:3.32, 0.50:6.94, 0.75:17.0, 1.00:37, 1.25:69, 1.50:117, 1.75:185, 2.00:274, 2.25:389, 2.50:533, 2.75:708, 3.00:919},
+    'glorious'     :{'frictionFactor':.002, 0.10:2.97, 0.25:3.55, 0.50:7.64, 0.75:19.0, 1.00:40, 1.25:76, 1.50:129, 1.75:203, 2.00:302, 2.25:428, 2.50:586, 2.75:779, 3.00:1011}
     }
 
 # site dictionary for pipe installations
@@ -80,7 +81,6 @@ depth        = int(input('Input depth: ')) # depth of the reservoir in meters
 fillTime     = float(input('Enter fill time, in hours: '))   # time, in hours for both filling and draining
 turbineFlow  = float(input('Enter turbine flow: '))   # turbine volumetric flow
 pumpFlow     = float(input('Enter pump flow: '))   # pump volumetric flow
-pipeDiameter = float(input('Enter pipe diameter: ')) # pipe diameter
 
 # assumed constants
 g            = 9.81 # gravity, for the love of god dont make this an input
@@ -216,34 +216,35 @@ def masterCost(pumpGrade, performanceRatingUp, flowRateUp, turbineGrade, perform
 efficiencyCheck = 0
 
 # runs cost and efficiency calculations for every grade of pipe, pump, and turbine on the site selected
-for z in pipeGrades:
-    for y in turbineGrades:
-        for x in pumpGrades:
-            mwhIn2 = mwh(energyIn(joules(energyOut), pipes[z]['frictionFactor'], siteDictionary[userInput['site']]['performanceRating'], pipeDiameter, siteDictionary[userInput['site']]['angle1'], siteDictionary[userInput['site']]['angle2'],  
-                    mass(turbineFlow, waterDensity, fillTime), pumps[x]['efficiency'], turbines[y]['efficiency'], 
-                    velocityIn(pumpFlow, pipeDiameter), velocityOut(turbineFlow, pipeDiameter),
-                    ))
+for d in pipeDiameters:
+    for z in pipeGrades:
+        for y in turbineGrades:
+            for x in pumpGrades:
+                mwhIn2 = mwh(energyIn(joules(energyOut), pipes[z]['frictionFactor'], siteDictionary[userInput['site']]['performanceRating'], d, siteDictionary[userInput['site']]['angle1'], siteDictionary[userInput['site']]['angle2'],  
+                        mass(turbineFlow, waterDensity, fillTime), pumps[x]['efficiency'], turbines[y]['efficiency'], 
+                        velocityIn(pumpFlow, d), velocityOut(turbineFlow, d),
+                        ))
 
-            # determines the cost of this configuration
-            tempCost = (masterCost(
-                    x,    siteDictionary[userInput['site']]['performanceRating'], velocityIn(pumpFlow, pipeDiameter), 
-                    y, siteDictionary[userInput['site']]['performanceRating'], velocityOut(turbineFlow, pipeDiameter), 
-                    siteDictionary[userInput['site']]['angle1'], siteDictionary[userInput['site']]['angle2'], z, pipeDiameter,
-                    siteDictionary[userInput['site']]['length'], depth, userInput['site'], reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity)
-                    ))
+                # determines the cost of this configuration
+                tempCost = (masterCost(
+                        x,    siteDictionary[userInput['site']]['performanceRating'], velocityIn(pumpFlow, d), 
+                        y, siteDictionary[userInput['site']]['performanceRating'], velocityOut(turbineFlow, d), 
+                        siteDictionary[userInput['site']]['angle1'], siteDictionary[userInput['site']]['angle2'], z, d,
+                        siteDictionary[userInput['site']]['length'], depth, userInput['site'], reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity)
+                        ))
 
-            # if this configuration is within the budget, the Config is updated
-            if tempCost <= userInput['budget']:
-                # determines if the efficiency improves with the new grades
-                efficiencyPrint2 = efficiency(energyOut, mwhIn2)
-                if efficiencyPrint2 > efficiencyCheck:
-                # print('In site', userInput['site'], 'the system is', efficiencyPrint2, 'percent efficient and requires', mwhIn2, 'mwh. The cost is', cost)
-                    newCost = tempCost
-                    currentGrades = x, y, z, efficiencyPrint2, mwhIn2, newCost
-                else: 
+                # if this configuration is within the budget, the Config is updated
+                if tempCost <= userInput['budget']:
+                    # determines if the efficiency improves with the new grades
+                    efficiencyPrint2 = efficiency(energyOut, mwhIn2)
+                    if efficiencyPrint2 > efficiencyCheck:
+                    # print('In site', userInput['site'], 'the system is', efficiencyPrint2, 'percent efficient and requires', mwhIn2, 'mwh. The cost is', cost)
+                        newCost = tempCost
+                        currentGrades = x, y, z, efficiencyPrint2, mwhIn2, newCost, d
+                    else: 
+                        pass
+                else:
                     pass
-            else:
-                pass
 
 # if there are no possible combinations within the budget, first message is shown
 if currentGrades == 0:
@@ -251,5 +252,6 @@ if currentGrades == 0:
 
 # shows most efficient solution within budget
 else:
-    print('In site', userInput['site'], 'the system is ', currentGrades[3], 'percent efficient and requires', currentGrades[4], 'mwh. The cost is', currentGrades[5])
+    print('In site', userInput['site'], 'the system is ', currentGrades[3], 'percent efficient and requires', currentGrades[4], 'mwh. The cost is', currentGrades[5], 'dollars.')
+    print('This configuration uses a', currentGrades[0], 'pump, a', currentGrades[1], 'turbine, and', currentGrades[2], 'grade', currentGrades[6], 'meter diameter pipe.')
 
