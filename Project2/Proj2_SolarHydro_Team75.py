@@ -1,10 +1,10 @@
 import math
 
-
 # monkey code dictionaries
 pumpGrades    = ('cheap', 'value', 'standard', 'high-grade', 'premium')
 turbineGrades = ('meh', 'good', 'fine', 'superb', 'mondo')
 pipeGrades    = ('salvage', 'questionable', 'better', 'nice', 'outstanding', 'glorious')
+
 pumps = {
     'cheap'     : {'efficiency': 0.80, 20: 200, 30: 220, 40: 242, 50: 266, 60: 293, 70: 322, 80: 354, 90: 390, 100: 429, 110: 472, 120: 519},
     'value'     : {'efficiency': 0.83, 20: 240, 30: 264, 40: 290, 50: 319, 60: 351, 70: 387, 80: 425, 90: 468, 100: 514, 110: 566, 120: 622},
@@ -36,28 +36,56 @@ pipes = {
     'glorious'     :{'frictionFactor':.002, 0.10:2.97, .25:3.55, .50:7.64, .75:19.0, 1.00:40, 1.25:76, 1.50:129, 1.75:203, 2.00:302, 2.25:428, 2.50:586, 2.75:779, 3.00:1011}
     }
 
+# site dictionary for pipe installations
 siteDictionary = {
     1:{'length':67.8, 'performanceRating':80,  'angle1':30, 'angle2':30}, 
     3:{'length':129,  'performanceRating':120, 'angle1':45, 'angle2':45}}
 
+# Joe's magic user inputs
+def getUserInput():
+    print("""Choices for site:
+    1. Zone 1
+    3. Zone 3""")
+    sitesInput = input("Enter number for zone to consider. If nothing is entered, site 1 will be assumed: ")
+    site = 0
 
-# inputs, hard coded for now
-depth = 10 # depth of the reservoir in meters
-energyOut = 120 # mwh required
-waterDensity  = 1000 # density of water, kg per m^3
-fillTime  = 4.58   # time, in hours for both filling and draining
-turbineFlow = 30   # turbine volumetric flow
-pumpFlow = 65   # pump volumetric flow
-turbineEfficiency = .92  # turbine efficiency
-pumpEfficiency = .9   # pump efficiency
-g  = 9.81 # gravity, for the love of god dont make this an input
-pipeFriction = .05 # pipe friction
-pipeLength = 75 # total pipe length
-pipeDiameter = 2.00 # pipe diameter
-bendConstant1 = .15 # bend constant 1
-bendConstant2 = .2  # bend constant 2
-bendConstant3 = 0 # bend constant 3
-currentGrades = 0
+    # 
+    if sitesInput.__contains__('1'):
+        site = 1
+    if sitesInput.__contains__('3'):
+        site = 3
+    if sitesInput.__contains__('2'):
+        print("Site 2 is on a native american burial ground: You will run out of money in legal fees before you finish; you are now on site 3.")
+        site = 3
+    
+    try:
+        budget = int(input("What is your budget? (If no budget, just press enter): "))
+    except ValueError:
+        budget = 1000000000 # really big value that will be bigger than any price
+
+    
+    return {'site': site, 'budget': budget}
+userInput = getUserInput()
+
+# changing input to site 1 if there isn't a site entered
+if userInput['site'] == 1:
+    pass
+elif userInput['site'] == 3:
+    pass
+else:
+    userInput['site'] = 1
+
+# inputs, now they are actually user inputs
+depth        = int(input('Input depth: ')) # depth of the reservoir in meters
+fillTime     = float(input('Enter fill time, in hours: '))   # time, in hours for both filling and draining
+turbineFlow  = float(input('Enter turbine flow: '))   # turbine volumetric flow
+pumpFlow     = float(input('Enter pump flow: '))   # pump volumetric flow
+pipeDiameter = float(input('Enter pipe diameter: ')) # pipe diameter
+
+# assumed constants
+g            = 9.81 # gravity, for the love of god dont make this an input
+waterDensity = 1000 # density of water, kg per m^3
+energyOut    = 120 # mwh required
 
 # big monstrous equations
 def energyIn(energyOut, pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2,  mass, pumpEfficiency, turbineEfficiency, velocityOut, velocityIn):
@@ -86,15 +114,15 @@ def velocityIn (pumpFlow, diameter):
 def reservoirArea (mass, waterDensity):
     return (mass / waterDensity) / depth
 
-# joules to mwh
+# converts joules to mwh
 def mwh(joules):
     return joules / (1E6 * 60 * 60)
 
-# mwh to joules
+# converts mwh to joules
 def joules(mwh):
     return mwh * 3.6E9
 
-# hours in time to seconds
+# converts hours to seconds
 def seconds(hours):
     return hours * 60 * 60
 
@@ -104,30 +132,6 @@ def calcEfficiency(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2):
 
  
     return 
-
-# Joe's magic user inputs
-def getUserInput():
-    print("""Choices for site:
-    1. Zone 1
-    3. Zone 3""")
-    sitesInput = input("Enter numbers for zones to consider, you must choose a site: ")
-    site = 0
-    if sitesInput.__contains__('1'):
-        site = 1
-    if sitesInput.__contains__('3'):
-        site = 3
-    if sitesInput.__contains__('2'):
-        print("Site 2 is on a native american burial ground: You will run out of money in legal fees before you finish; you are now on site 3.")
-        site = 3
-    
-    try:
-        budget = int(input("What is your budget? (If no budget, just press enter): "))
-    except ValueError:
-        budget = 1000000000 # really big value that will be bigger than any price
-    
-    return {'site': site, 'budget': budget}
-
-userInput = getUserInput()
 
 # cost calculations
 def pumpCost(pumpGrade, performanceRatingUp, flowRateUp):
@@ -166,7 +170,7 @@ def wallCost(reservoirArea, height):
         costPerMeter = 30 + 60 + 95 + 135 + 180 + 250 + (depth - 17.5) * (90)/(2.5)
     return costPerMeter
 
-# site 1 calculations
+# site 1 calculations for site specific costs
 def site1cost(reservoirArea):
     # costs for land development
     cost = 0
@@ -177,7 +181,7 @@ def site1cost(reservoirArea):
     cost += 67 * 500 # pipe installation on ground
     return cost
 
-# site 3 calculations
+# site 3 calculations for site specific costs
 def site3cost(reservoirArea):
     # cost of land development
     cost = 0
@@ -192,21 +196,26 @@ def site3cost(reservoirArea):
 # big cost equation
 def masterCost(pumpGrade, performanceRatingUp, flowRateUp, turbineGrade, performanceRatingDown, flowRateDown, angle1, angle2,  pipeGrade, diameter, length, depth, site, area):
     totalCost = 0
+
+    # adds costs that depend on grades
     totalCost += pumpCost(pumpGrade, performanceRatingUp, flowRateUp)
     totalCost += turbineCost(turbineGrade, performanceRatingDown, flowRateDown)
     totalCost += fittingCost(angle1, diameter)
     totalCost += fittingCost(angle2, diameter)
-    totalCost += pipeCost(pipeGrade, diameter, (siteDictionary[site]['length'] + depth))
+    totalCost += pipeCost(pipeGrade, diameter, (length + depth))
     totalCost += wallCost(area, depth)
     
+    # adds site specific costs
     if site == 1:
         totalCost += site1cost(reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity))
     else:
         totalCost += site3cost(reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity))
     return totalCost
  
-
+# declares the starting efficiency as zero for comparisons
 efficiencyCheck = 0
+
+# runs cost and efficiency calculations for every grade of pipe, pump, and turbine on the site selected
 for z in pipeGrades:
     for y in turbineGrades:
         for x in pumpGrades:
@@ -214,13 +223,16 @@ for z in pipeGrades:
                     mass(turbineFlow, waterDensity, fillTime), pumps[x]['efficiency'], turbines[y]['efficiency'], 
                     velocityIn(pumpFlow, pipeDiameter), velocityOut(turbineFlow, pipeDiameter),
                     ))
-            # determines if it is within budget
+
+            # determines the cost of this configuration
             tempCost = (masterCost(
                     x,    siteDictionary[userInput['site']]['performanceRating'], velocityIn(pumpFlow, pipeDiameter), 
                     y, siteDictionary[userInput['site']]['performanceRating'], velocityOut(turbineFlow, pipeDiameter), 
                     siteDictionary[userInput['site']]['angle1'], siteDictionary[userInput['site']]['angle2'], z, pipeDiameter,
                     siteDictionary[userInput['site']]['length'], depth, userInput['site'], reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity)
                     ))
+
+            # if this configuration is within the budget, the Config is updated
             if tempCost <= userInput['budget']:
                 # determines if the efficiency improves with the new grades
                 efficiencyPrint2 = efficiency(energyOut, mwhIn2)
@@ -232,8 +244,12 @@ for z in pipeGrades:
                     pass
             else:
                 pass
+
+# if there are no possible combinations within the budget, first message is shown
 if currentGrades == 0:
     print('There is no possible solution within the specified budget.')
+
+# shows most efficient solution within budget
 else:
     print('In site', userInput['site'], 'the system is ', currentGrades[3], 'percent efficient and requires', currentGrades[4], 'mwh. The cost is', currentGrades[5])
 
