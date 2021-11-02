@@ -3,6 +3,9 @@ import pandas as pd
 
 
 # monkey code dictionaries
+pumpGrades    = ('cheap', 'value', 'standard', 'high-grade', 'premium')
+turbineGrades = ('meh', 'good', 'fine', 'superb', 'mondo')
+pipeGrades    = ('salvage', 'questionable', 'better', 'nice', 'outstanding', 'glorious')
 pumps = {
     'cheap'     : {'efficiency': 0.80, 20: 200, 30: 220, 40: 242, 50: 266, 60: 293, 70: 322, 80: 354, 90: 390, 100: 429, 110: 472, 120: 519},
     'value'     : {'efficiency': 0.83, 20: 240, 30: 264, 40: 290, 50: 319, 60: 351, 70: 387, 80: 425, 90: 468, 100: 514, 110: 566, 120: 622},
@@ -18,12 +21,12 @@ turbines = {
     'mondo'  :{'efficiency': .94, 20:746, 30:821, 40:903, 50:994, 60:1093, 70:1202, 80:1322, 90:1455, 100:1600, 110:1760, 120:1936}
     }
 bends = {
-    20: {'pipeLoss': .1 , 0.10:1.00, 0.25:1.49, 0.50:4.93, 0.75:14, 1.00:32, 1.25:62, 1.50:107, 1.75:169, 2.00:252, 2.25:359, 2.50:492, 2.75:654, 3.00:849},
+    20: {'pipeLoss': .10, 0.10:1.00, 0.25:1.49, 0.50:4.93, 0.75:14, 1.00:32, 1.25:62, 1.50:107, 1.75:169, 2.00:252, 2.25:359, 2.50:492, 2.75:654, 3.00:849},
     30: {'pipeLoss': .15, 0.10:1.05, 0.25:1.57, 0.50:5.17, 0.75:15, 1.00:34, 1.25:65, 1.50:112, 1.75:178, 2.00:265, 2.25:377, 2.50:516, 2.75:687, 3.00:892},
-    45: {'pipeLoss': .2 , 0.10:1.10, 0.25:1.64, 0.50:5.43, 0.75:16, 1.00:36, 1.25:69, 1.50:118, 1.75:187, 2.00:278, 2.25:396, 2.50:542, 2.75:721, 3.00:936},
+    45: {'pipeLoss': .20, 0.10:1.10, 0.25:1.64, 0.50:5.43, 0.75:16, 1.00:36, 1.25:69, 1.50:118, 1.75:187, 2.00:278, 2.25:396, 2.50:542, 2.75:721, 3.00:936},
     60: {'pipeLoss': .22, 0.10:1.16, 0.25:1.73, 0.50:5.70, 0.75:16, 1.00:38, 1.25:72, 1.50:124, 1.75:196, 2.00:292, 2.25:415, 2.50:569, 2.75:757, 3.00:983},
     75: {'pipeLoss': .27, 0.10:1.22, 0.25:1.81, 0.50:5.99, 0.75:17, 1.00:39, 1.25:76, 1.50:130, 1.75:206, 2.00:307, 2.25:436, 2.50:598, 2.75:795, 3.00:1032},
-    90: {'pipeLoss': .3 , 0.10:1.28, 0.25:1.90, 0.50:7.00, 0.75:18, 1.00:41, 1.25:80, 1.50:137, 1.75:216, 2.00:322, 2.25:458, 2.50:628, 2.75:835, 3.00:1084}
+    90: {'pipeLoss': .30, 0.10:1.28, 0.25:1.90, 0.50:7.00, 0.75:18, 1.00:41, 1.25:80, 1.50:137, 1.75:216, 2.00:322, 2.25:458, 2.50:628, 2.75:835, 3.00:1084}
     }
 pipes = {
     'salvage'      :{'frictionFactor':.05 , 0.10:1.00, .25:1.20, .50:2.57, .75:6.30, 1.00:14, 1.25:26, 1.50:43 , 1.75:68 , 2.00:102, 2.25:144, 2.50:197, 2.75:262, 3.00:340},
@@ -33,6 +36,11 @@ pipes = {
     'outstanding'  :{'frictionFactor':.005, 0.10:2.70, .25:3.32, .50:6.94, .75:17.0, 1.00:37, 1.25:69, 1.50:117, 1.75:185, 2.00:274, 2.25:389, 2.50:533, 2.75:708, 3.00:919},
     'glorious'     :{'frictionFactor':.002, 0.10:2.97, .25:3.55, .50:7.64, .75:19.0, 1.00:40, 1.25:76, 1.50:129, 1.75:203, 2.00:302, 2.25:428, 2.50:586, 2.75:779, 3.00:1011}
     }
+
+siteDictionary = {
+    1:{'length':67.8, 'performanceRating':80,  'angle1':30, 'angle2':30}, 
+    3:{'length':129,  'performanceRating':120, 'angle1':45, 'angle2':45}}
+
 
 # inputs, hard coded for now
 depth = 10 # depth of the reservoir in meters
@@ -46,10 +54,14 @@ pumpEfficiency = .9   # pump efficiency
 g  = 9.81 # gravity, for the love of god dont make this an input
 pipeFriction = .05 # pipe friction
 pipeLength = 75 # total pipe length
-pipeDiameter = 2 # pipe diameter
+pipeDiameter = 2.00 # pipe diameter
 bendConstant1 = .15 # bend constant 1
 bendConstant2 = .2  # bend constant 2
 bendConstant3 = 0 # bend constant 3
+# cost values, hard coded for now 
+pumpGrade = 'cheap'
+turbineGrade = 'meh'
+pipeGrade = 'salvage'
 
 # big monstrous equations
 def energyIn(energyOut, pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2, bendConstant3, mass, pumpEfficiency, turbineEfficiency, velocityOut, velocityIn):
@@ -57,6 +69,10 @@ def energyIn(energyOut, pipeFriction, pipeLength, pipeDiameter, bendConstant1, b
         (energyOut / turbineEfficiency) + (1.07E9 / 2) * (velocityOut * velocityOut + velocityIn * velocityIn) * (pipeFriction * (pipeLength / pipeDiameter) + bendConstant1 + bendConstant2 + bendConstant3)
         ) / pumpEfficiency
     return energy
+
+# efficiency
+def efficiency(energyOut, energyIn):
+    return energyOut / energyIn * 100
 
 # mass equation
 def mass (turbineFlow, waterDensity, t):
@@ -86,7 +102,7 @@ def joules(mwh):
 def seconds(hours):
     return hours * 60 * 60
 
-# honestly idk what this is
+# honestly i dont know what this is
 def calcEfficiency(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2):
     print(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2)
 
@@ -100,72 +116,107 @@ def getEfficiencyTable():
     
     return data
 
-# Joe's magic
+# Joe's magic user inputs
 def getUserInput():
     print("""Choices for site:
     1. Zone 1
     3. Zone 3""")
     sitesInput = input("Enter numbers for zones to consider: ")
-    sites = []
+    site = 0
     if sitesInput.__contains__('1'):
-        sites.append(1)
+        site = 1
     if sitesInput.__contains__('3'):
-        sites.append(3)
+        site = 3
     if sitesInput.__contains__('2'):
-        print("Site 2 is on a native american burial ground: You will run out of money in legal fees before you finish; Choose another site.")
-        exit()
+        print("Site 2 is on a native american burial ground: You will run out of money in legal fees before you finish; you are now on site 3.")
+        site = 3
     
     try:
         budget = int(input("What is your budget? (If no budget, just press enter): "))
     except ValueError:
         budget = 10000000 # really big value that will be bigger than any price
     
-    return {'sites': sites, 'budget': budget}
+    return {'site': site, 'budget': budget}
 
 userInput = getUserInput()
 
-print(userInput)
-
 # cost calculations
-def pumpCost(grade, performanceRating, flowRate):
-    cost = flowRate * (pumps[grade[performanceRating]])
+def pumpCost(pumpGrade, performanceRatingUp, flowRateUp):
+    cost = flowRateUp * (pumps[pumpGrade][performanceRatingUp])
     return cost
 
-def turbineCost(grade, performanceRating, flowRate):
-    cost = flowRate * (turbines[grade[flowRate]])
+def turbineCost(turbineGrade, performanceRatingDown, flowRateDown):
+    cost = flowRateDown * (turbines[turbineGrade][performanceRatingDown])
     return cost
 
 def fittingCost(angle, diameter):
-    cost = bends[angle[diameter]]
+    cost = bends[angle][diameter]
     return cost
 
 def pipeCost(grade, diameter, length):
-    cost = length * (grade[diameter])
+    cost = length * (pipes[grade][diameter])
     return cost
+
+def wallCost(reservoirArea, height):
+    cost = 0 
+    circumference = 2 * math.sqrt(reservoirArea * math.pi)
+    costPerMeter = 30
+                   + (height - 5) * 12
+                   + (height - 7.5) * 14
+                   + (height - 10) * 16
+                   + (height - 12.5) * 18
+                   + (height - 15) * 28
+                   + (height - 17.5) * 36
+    cost = circumference * costPerMeter
+    return cost
+
+print(wallCost(reservoirArea(mass, waterDensity)))
 
 # site 1 calculations
 def site1cost(reservoirArea):
     # costs for land development
     cost = 0
-    cost += 40,000 # access road
+    cost += 40000 # access road
+    cost += 100000 # pumphouse
     cost += (reservoirArea * .25) # reservoir area
-    cost += 10,000 # random testing 
+    cost += 10000 # random testing 
     return cost
 
 # site 3 calculations
 def site3cost(reservoirArea):
     # cost of land development
     cost = 0
-    cost += 150,000 # access road
+    cost += 150000 # access road
+    cost += 100000 # pumphouse
     cost += (reservoirArea * .3) # reservoir area development
     cost += (reservoirArea * 1.6) # tree replanting
     return cost
-# diagnostics
-print('mass:', mass(turbineFlow, waterDensity, fillTime))
-print('velocity in:', velocityIn(pumpFlow, pipeDiameter))
-print('velocity out:', velocityOut(turbineFlow, pipeDiameter))
+
+# big cost equation
+def masterCost(pumpGrade, performanceRatingUp, flowRateUp, turbineGrade, performanceRatingDown, flowRateDown, angle1, angle2,  pipeGrade, diameter, length, depth, site):
+    totalCost = 0
+    totalCost += pumpCost(pumpGrade, performanceRatingUp, flowRateUp)
+    totalCost += turbineCost(turbineGrade, performanceRatingDown, flowRateDown)
+    totalCost += fittingCost(angle1, diameter)
+    totalCost += fittingCost(angle2, diameter)
+    totalCost += pipeCost(pipeGrade, diameter, (siteDictionary[userInput['site']]['length'] + depth))
+    
+    if site == 1:
+        totalCost += site1cost(reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity))
+    else:
+        totalCost += site3cost(reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity))
+    return totalCost
+# running cost equation
+print('The cost on site', userInput['site'], 'is', masterCost(
+    pumpGrade,    siteDictionary[userInput['site']]['performanceRating'], velocityIn(pumpFlow, pipeDiameter), 
+    turbineGrade, siteDictionary[userInput['site']]['performanceRating'], velocityOut(turbineFlow, pipeDiameter), 
+    siteDictionary[userInput['site']]['angle1'], siteDictionary[userInput['site']]['angle2'], pipeGrade, pipeDiameter,
+    siteDictionary[userInput['site']]['length'], depth, userInput['site']
+    ))
 # running big equation
-print('energy in :', (mwh(energyIn(joules(energyOut), pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2, bendConstant3, 
+energyIn = mwh(energyIn(joules(energyOut), pipes[pipeGrade]['frictionFactor'], siteDictionary[userInput['site']]['performanceRating'], pipeDiameter, bendConstant1, bendConstant2, bendConstant3, 
                mass(turbineFlow, waterDensity, fillTime), pumpEfficiency, turbineEfficiency, 
                velocityIn(pumpFlow, pipeDiameter), velocityOut(turbineFlow, pipeDiameter),
-               ))))
+               ))
+efficiency = efficiency(energyOut, energyIn)
+print('In site', userInput['site'], 'The system is', round(efficiency, 2), '% efficient and requires', round(energyIn, 2), 'mwh.')
