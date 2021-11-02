@@ -42,7 +42,7 @@ siteDictionary = {
 
 
 # inputs, hard coded for now
-depth = 20 # depth of the reservoir in meters
+depth = 10 # depth of the reservoir in meters
 energyOut = 120 # mwh required
 waterDensity  = 1000 # density of water, kg per m^3
 fillTime  = 4.58   # time, in hours for both filling and draining
@@ -110,7 +110,7 @@ def getUserInput():
     print("""Choices for site:
     1. Zone 1
     3. Zone 3""")
-    sitesInput = input("Enter numbers for zones to consider: ")
+    sitesInput = input("Enter numbers for zones to consider, you must choose a site: ")
     site = 0
     if sitesInput.__contains__('1'):
         site = 1
@@ -123,7 +123,7 @@ def getUserInput():
     try:
         budget = int(input("What is your budget? (If no budget, just press enter): "))
     except ValueError:
-        budget = 10000000 # really big value that will be bigger than any price
+        budget = 1000000000 # really big value that will be bigger than any price
     
     return {'site': site, 'budget': budget}
 
@@ -174,6 +174,7 @@ def site1cost(reservoirArea):
     cost += 100000 # pumphouse
     cost += (reservoirArea * .25) # reservoir area
     cost += 10000 # random testing 
+    cost += 67 * 500 # pipe installation on ground
     return cost
 
 # site 3 calculations
@@ -184,6 +185,8 @@ def site3cost(reservoirArea):
     cost += 100000 # pumphouse
     cost += (reservoirArea * .3) # reservoir area development
     cost += (reservoirArea * 1.6) # tree replanting
+    cost += 118.2 * 500 # pipe installation on ground
+    cost += 1381 * 250 # pipe installation off of ground
     return cost
 
 # big cost equation
@@ -203,76 +206,34 @@ def masterCost(pumpGrade, performanceRatingUp, flowRateUp, turbineGrade, perform
     return totalCost
  
 
-# running big equation
 efficiencyCheck = 0
-currentGrades1 = 0
-# for loop site 1
 for z in pipeGrades:
     for y in turbineGrades:
         for x in pumpGrades:
-            mwhIn2 = mwh(energyIn(joules(energyOut), pipes[z]['frictionFactor'], siteDictionary[1]['performanceRating'], pipeDiameter, siteDictionary[1]['angle1'], siteDictionary[1]['angle2'],  
+            mwhIn2 = mwh(energyIn(joules(energyOut), pipes[z]['frictionFactor'], siteDictionary[userInput['site']]['performanceRating'], pipeDiameter, siteDictionary[userInput['site']]['angle1'], siteDictionary[userInput['site']]['angle2'],  
                     mass(turbineFlow, waterDensity, fillTime), pumps[x]['efficiency'], turbines[y]['efficiency'], 
                     velocityIn(pumpFlow, pipeDiameter), velocityOut(turbineFlow, pipeDiameter),
                     ))
             # determines if it is within budget
             tempCost = (masterCost(
-                    x,    siteDictionary[1]['performanceRating'], velocityIn(pumpFlow, pipeDiameter), 
-                    y, siteDictionary[1]['performanceRating'], velocityOut(turbineFlow, pipeDiameter), 
-                    siteDictionary[1]['angle1'], siteDictionary[1]['angle2'], z, pipeDiameter,
-                    siteDictionary[1]['length'], depth, 1, reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity)
-                     ))
+                    x,    siteDictionary[userInput['site']]['performanceRating'], velocityIn(pumpFlow, pipeDiameter), 
+                    y, siteDictionary[userInput['site']]['performanceRating'], velocityOut(turbineFlow, pipeDiameter), 
+                    siteDictionary[userInput['site']]['angle1'], siteDictionary[userInput['site']]['angle2'], z, pipeDiameter,
+                    siteDictionary[userInput['site']]['length'], depth, userInput['site'], reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity)
+                    ))
             if tempCost <= userInput['budget']:
                 # determines if the efficiency improves with the new grades
                 efficiencyPrint2 = efficiency(energyOut, mwhIn2)
                 if efficiencyPrint2 > efficiencyCheck:
                 # print('In site', userInput['site'], 'the system is', efficiencyPrint2, 'percent efficient and requires', mwhIn2, 'mwh. The cost is', cost)
                     newCost = tempCost
-                    currentGrades1 = x, y, z, efficiencyPrint2, mwhIn2, newCost, 1
+                    currentGrades = x, y, z, efficiencyPrint2, mwhIn2, newCost
                 else: 
                     pass
             else:
                 pass
-# for loop site 3
-efficiencyCheck = 0
-currentGrades3 = 0
-for z in pipeGrades:
-    for y in turbineGrades:
-        for x in pumpGrades:
-            mwhIn2 = mwh(energyIn(joules(energyOut), pipes[z]['frictionFactor'], siteDictionary[3]['performanceRating'], pipeDiameter, siteDictionary[3]['angle1'], siteDictionary[3]['angle2'],  
-                    mass(turbineFlow, waterDensity, fillTime), pumps[x]['efficiency'], turbines[y]['efficiency'], 
-                    velocityIn(pumpFlow, pipeDiameter), velocityOut(turbineFlow, pipeDiameter),
-                    ))
-            # determines if it is within budget
-            tempCost = (masterCost(
-                    x,    siteDictionary[3]['performanceRating'], velocityIn(pumpFlow, pipeDiameter), 
-                    y, siteDictionary[3]['performanceRating'], velocityOut(turbineFlow, pipeDiameter), 
-                    siteDictionary[3]['angle1'], siteDictionary[3]['angle2'], z, pipeDiameter,
-                    siteDictionary[3]['length'], depth, 3, reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity)
-                     ))
-            if tempCost <= userInput['budget']:
-                # determines if the efficiency improves with the new grades
-                efficiencyPrint2 = efficiency(energyOut, mwhIn2)
-                if efficiencyPrint2 > efficiencyCheck:
-                # print('In site', userInput['site'], 'the system is', efficiencyPrint2, 'percent efficient and requires', mwhIn2, 'mwh. The cost is', cost)
-                    newCost = tempCost
-                    currentGrades3 = x, y, z, efficiencyPrint2, mwhIn2, newCost, 3
-                else: 
-                    pass
-            else:
-                pass
-
-# determining response based on user input
-if currentGrades1 and currentGrades3 == 0:
+if currentGrades == 0:
     print('There is no possible solution within the specified budget.')
 else:
-    if userInput['site'] == 1:
-        currentGradesAll = currentGrades1
-    elif userInput['site'] == 3:
-        currentGradesAll = currentGrades3
-    else:
-        if currentGrades3[3] > currentGrades1[3]:
-            currentGradesAll = currentGrades3
-        else:
-            currentGradesAll = currentGrades1
+    print('In site', userInput['site'], 'the system is ', currentGrades[3], 'percent efficient and requires', currentGrades[4], 'mwh. The cost is', currentGrades[5])
 
-    print('The most efficient site is site', currentGradesAll[6], ' where the system is ', currentGradesAll[3], 'percent efficient and requires', currentGradesAll[4], 'mwh. The cost is', currentGradesAll[5])
