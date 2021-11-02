@@ -16,7 +16,7 @@ turbines = {
     'meh'    :{'efficiency': .83, 20:360, 30:396, 40:436, 50:479, 60:527,  70:580,  80:638,  90:702,  100:772,  110:849,  120:934},
     'good'   :{'efficiency': .86, 20:432, 30:475, 40:523, 50:575, 60:632,  70:696,  80:765,  90:842,  100:926,  110:1019, 120:1120},
     'fine'   :{'efficiency': .89, 20:518, 30:570, 40:627, 50:690, 60:759,  70:835,  80:918,  90:1010, 100:1111, 110:1222, 120:1345},
-    'surperb':{'efficiency': .94, 20:622, 30:684, 40:753, 50:828, 60:911,  70:1002, 80:1102, 90:1212, 100:1333, 110:1467, 120:1614},
+    'superb':{'efficiency': .94, 20:622, 30:684, 40:753, 50:828, 60:911,  70:1002, 80:1102, 90:1212, 100:1333, 110:1467, 120:1614},
     'mondo'  :{'efficiency': .94, 20:746, 30:821, 40:903, 50:994, 60:1093, 70:1202, 80:1322, 90:1455, 100:1600, 110:1760, 120:1936}
     }
 bends = {
@@ -42,7 +42,7 @@ siteDictionary = {
 
 
 # inputs, hard coded for now
-depth = 10 # depth of the reservoir in meters
+depth = 20 # depth of the reservoir in meters
 energyOut = 120 # mwh required
 waterDensity  = 1000 # density of water, kg per m^3
 fillTime  = 4.58   # time, in hours for both filling and draining
@@ -57,21 +57,18 @@ pipeDiameter = 2.00 # pipe diameter
 bendConstant1 = .15 # bend constant 1
 bendConstant2 = .2  # bend constant 2
 bendConstant3 = 0 # bend constant 3
-# cost values, hard coded for now 
-pumpGrade = 'cheap'
-turbineGrade = 'meh'
-pipeGrade = 'salvage'
+currentGrades = 0
 
 # big monstrous equations
 def energyIn(energyOut, pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2,  mass, pumpEfficiency, turbineEfficiency, velocityOut, velocityIn):
     energy = (
-        (energyOut / turbineEfficiency) + (1.07E9 / 2) * (velocityOut * velocityOut + velocityIn * velocityIn) * (pipeFriction * (pipeLength / pipeDiameter) + bendConstant1 + bendConstant2 )
+        (energyOut / turbineEfficiency) + (mass / 2) * (velocityOut * velocityOut + velocityIn * velocityIn) * (pipeFriction * (pipeLength / pipeDiameter) + bendConstant1 + bendConstant2 )
         ) / pumpEfficiency
     return energy
 
 # efficiency
 def efficiency(energyOut, energyIn):
-    return energyOut / energyIn * 100
+    return (energyOut / energyIn) * 100
 
 # mass equation
 def mass (turbineFlow, waterDensity, t):
@@ -206,26 +203,42 @@ def masterCost(pumpGrade, performanceRatingUp, flowRateUp, turbineGrade, perform
         totalCost += site3cost(reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity))
     return totalCost
  
-# running cost equation
-print('The cost on site', userInput['site'], 'is', masterCost(
-    pumpGrade,    siteDictionary[userInput['site']]['performanceRating'], velocityIn(pumpFlow, pipeDiameter), 
-    turbineGrade, siteDictionary[userInput['site']]['performanceRating'], velocityOut(turbineFlow, pipeDiameter), 
-    siteDictionary[userInput['site']]['angle1'], siteDictionary[userInput['site']]['angle2'], pipeGrade, pipeDiameter,
-    siteDictionary[userInput['site']]['length'], depth, userInput['site'], reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity)
-    ))
+
 # running big equation
-mwhIn = mwh(energyIn(joules(energyOut), pipes[pipeGrade]['frictionFactor'], siteDictionary[userInput['site']]['performanceRating'], pipeDiameter, bendConstant1, bendConstant2,  
-               mass(turbineFlow, waterDensity, fillTime), pumpEfficiency, turbineEfficiency, 
-               velocityIn(pumpFlow, pipeDiameter), velocityOut(turbineFlow, pipeDiameter),
-               ))
-efficiency = efficiency(energyOut, mwhIn)
-print('In site', userInput['site'], 'the system is', round(efficiency, 2), '% efficient and requires', round(energyIn, 2), 'mwh.')
-
+#mwhIn = mwh(energyIn(joules(energyOut), pipes[pipeGrade]['frictionFactor'], siteDictionary[userInput['site']]['performanceRating'], pipeDiameter, bendConstant1, bendConstant2,  
+#               mass(turbineFlow, waterDensity, fillTime), pumpEfficiency, turbineEfficiency, 
+#               velocityIn(pumpFlow, pipeDiameter), velocityOut(turbineFlow, pipeDiameter),
+#               ))
+#efficiencyPrint = efficiency(energyOut, mwhIn)
+#print('In site', userInput['site'], 'the system is', efficiencyPrint, 'percent efficient and requires', mwhIn, 'mwh.')
+efficiencyCheck = 0
 # computer killing for loops
-
-mwhIn2 = mwh(energyIn(joules(energyOut), pipes[pipeGrade]['frictionFactor'], siteDictionary[userInput['site']]['performanceRating'], pipeDiameter, bendConstant1, bendConstant2,  
-               mass(turbineFlow, waterDensity, fillTime), pumpEfficiency, turbineEfficiency, 
-               velocityIn(pumpFlow, pipeDiameter), velocityOut(turbineFlow, pipeDiameter),
-               ))
-efficiency = efficiency(energyOut, energyIn)
-print('In site', userInput['site'], 'the system is', round(efficiency, 2), '% efficient and requires', round(energyIn, 2), 'mwh.')
+for z in pipeGrades:
+    for y in turbineGrades:
+        for x in pumpGrades:
+            mwhIn2 = mwh(energyIn(joules(energyOut), pipes[z]['frictionFactor'], siteDictionary[userInput['site']]['performanceRating'], pipeDiameter, siteDictionary[userInput['site']]['angle1'], siteDictionary[userInput['site']]['angle2'],  
+                    mass(turbineFlow, waterDensity, fillTime), pumps[x]['efficiency'], turbines[y]['efficiency'], 
+                    velocityIn(pumpFlow, pipeDiameter), velocityOut(turbineFlow, pipeDiameter),
+                    ))
+            # determines if it is within budget
+            tempCost = (masterCost(
+                    x,    siteDictionary[userInput['site']]['performanceRating'], velocityIn(pumpFlow, pipeDiameter), 
+                    y, siteDictionary[userInput['site']]['performanceRating'], velocityOut(turbineFlow, pipeDiameter), 
+                    siteDictionary[userInput['site']]['angle1'], siteDictionary[userInput['site']]['angle2'], z, pipeDiameter,
+                    siteDictionary[userInput['site']]['length'], depth, userInput['site'], reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity)
+                     ))
+            if tempCost <= userInput['budget']:
+                # determines if the efficiency improves with the new grades
+                efficiencyPrint2 = efficiency(energyOut, mwhIn2)
+                if efficiencyPrint2 > efficiencyCheck:
+                # print('In site', userInput['site'], 'the system is', efficiencyPrint2, 'percent efficient and requires', mwhIn2, 'mwh. The cost is', cost)
+                    newCost = tempCost
+                    currentGrades = x, y, z, efficiencyPrint2, mwhIn2, newCost
+                else: 
+                    pass
+            else:
+                pass
+if currentGrades == 0:
+    print('There is no possible solution within the specified budget.')
+else:
+    print('In site', userInput['site'], 'the system is ', currentGrades[3], 'percent efficient and requires', currentGrades[4], 'mwh. The cost is', currentGrades[5])
