@@ -214,6 +214,7 @@ def masterCost(pumpGrade, performanceRatingUp, flowRateUp, turbineGrade, perform
  
 # declares the starting efficiency as zero for comparisons
 efficiencyCheck = 0
+currentGrades = 0
 
 # runs cost and efficiency calculations for every pipe diameter and grade of pipe, pump, and turbine on the site selected
 for d in pipeDiameters:
