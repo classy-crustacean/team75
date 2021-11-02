@@ -45,8 +45,8 @@ siteDictionary = {
 # Joe's magic user inputs
 def getUserInput():
     print("""Choices for site:
-    1. Zone 1
-    3. Zone 3""")
+    Zone 1
+    Zone 3""")
     sitesInput = input("Enter number for zone to consider. If nothing is entered, site 1 will be assumed: ")
     site = 0
 
@@ -56,8 +56,8 @@ def getUserInput():
     if sitesInput.__contains__('3'):
         site = 3
     if sitesInput.__contains__('2'):
-        print("Site 2 is on a native american burial ground: You will run out of money in legal fees before you finish; you are now on site 3.")
-        site = 3
+        print("Site 2 is on a native american burial ground: You will run out of money in legal fees before you finish; you are now on site 1.")
+        site = 1
     
     try:
         budget = int(input("What is your budget? (If no budget, just press enter): "))
@@ -149,6 +149,9 @@ def fittingCost(angle, diameter):
 def pipeCost(grade, diameter, length):
     cost = length * (pipes[grade][diameter])
     return cost
+
+def costEfficiency(cost, efficiency):
+    return cost / efficiency
 
 def wallCost(reservoirArea, height):
     costPerMeter = 0 
@@ -253,6 +256,6 @@ if currentGrades == 0:
 
 # shows most efficient solution within budget
 else:
-    print('In site', userInput['site'], 'the system is ', currentGrades[3], 'percent efficient and requires', currentGrades[4], 'mwh. The cost is', currentGrades[5], 'dollars.')
+    print('In site', userInput['site'], 'the system is ', round(currentGrades[3], 0), 'percent efficient and requires', round(currentGrades[4], 0), 'mwh. The cost is', round(currentGrades[5], 0), 'dollars; the cost efficiency is', round(costEfficiency(currentGrades[5], currentGrades[3]), 0), 'dollars per kwh.')
     print('This configuration uses a', currentGrades[0], 'pump, a', currentGrades[1], 'turbine, and', currentGrades[2], 'grade', currentGrades[6], 'meter diameter pipe.')
 
