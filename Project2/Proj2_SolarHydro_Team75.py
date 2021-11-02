@@ -1,5 +1,4 @@
 import math
-import pandas as pd
 
 
 # monkey code dictionaries
@@ -64,9 +63,9 @@ turbineGrade = 'meh'
 pipeGrade = 'salvage'
 
 # big monstrous equations
-def energyIn(energyOut, pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2, bendConstant3, mass, pumpEfficiency, turbineEfficiency, velocityOut, velocityIn):
+def energyIn(energyOut, pipeFriction, pipeLength, pipeDiameter, bendConstant1, bendConstant2,  mass, pumpEfficiency, turbineEfficiency, velocityOut, velocityIn):
     energy = (
-        (energyOut / turbineEfficiency) + (1.07E9 / 2) * (velocityOut * velocityOut + velocityIn * velocityIn) * (pipeFriction * (pipeLength / pipeDiameter) + bendConstant1 + bendConstant2 + bendConstant3)
+        (energyOut / turbineEfficiency) + (1.07E9 / 2) * (velocityOut * velocityOut + velocityIn * velocityIn) * (pipeFriction * (pipeLength / pipeDiameter) + bendConstant1 + bendConstant2 )
         ) / pumpEfficiency
     return energy
 
@@ -106,15 +105,8 @@ def seconds(hours):
 def calcEfficiency(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2):
     print(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2)
 
-# nor this
-def getEfficiencyTable():
-    data = pd.DataFrame(columns=['pump', 'turbine', 'pipe'])
-    for pump in pumps:
-        for turbine in turbines:
-            for pipe in pipes:
-                data = data.append({'pump': pump, 'turbine': turbine, 'pipe': pipe}, ignore_index=True)
-    
-    return data
+ 
+    return 
 
 # Joe's magic user inputs
 def getUserInput():
@@ -158,19 +150,25 @@ def pipeCost(grade, diameter, length):
     return cost
 
 def wallCost(reservoirArea, height):
-    cost = 0 
+    costPerMeter = 0 
+    depth = height
     circumference = 2 * math.sqrt(reservoirArea * math.pi)
-    costPerMeter = 30
-                   + (height - 5) * 12
-                   + (height - 7.5) * 14
-                   + (height - 10) * 16
-                   + (height - 12.5) * 18
-                   + (height - 15) * 28
-                   + (height - 17.5) * 36
-    cost = circumference * costPerMeter
-    return cost
+    if height <= 5:
+        costPerMeter = (depth) * (30)/(5)
+    elif height <= 7.5:
+        costPerMeter = 30 + (depth - 5) * (30)/(2.5)
+    elif height <= 10:
+        costPerMeter = 30 + 60 + (depth - 7.5)* (35)/(2.5)
+    elif height <= 12.5:
+        costPerMeter = 30 + 60 + 95 + (depth - 10) * (40)/(2.5)
+    elif height <= 15:
+        costPerMeter = 30 + 60 + 95 + 135 + (depth - 12.5) * (45)/(2.5)
+    elif height <= 17.5:
+        costPerMeter = 30 + 60 + 95 + 135 + 180 + (depth - 15) * (70)/(2.5)
+    else:
+        costPerMeter = 30 + 60 + 95 + 135 + 180 + 250 + (depth - 17.5) * (90)/(2.5)
+    return costPerMeter
 
-print(wallCost(reservoirArea(mass, waterDensity)))
 
 # site 1 calculations
 def site1cost(reservoirArea):
@@ -193,30 +191,41 @@ def site3cost(reservoirArea):
     return cost
 
 # big cost equation
-def masterCost(pumpGrade, performanceRatingUp, flowRateUp, turbineGrade, performanceRatingDown, flowRateDown, angle1, angle2,  pipeGrade, diameter, length, depth, site):
+def masterCost(pumpGrade, performanceRatingUp, flowRateUp, turbineGrade, performanceRatingDown, flowRateDown, angle1, angle2,  pipeGrade, diameter, length, depth, site, area):
     totalCost = 0
     totalCost += pumpCost(pumpGrade, performanceRatingUp, flowRateUp)
     totalCost += turbineCost(turbineGrade, performanceRatingDown, flowRateDown)
     totalCost += fittingCost(angle1, diameter)
     totalCost += fittingCost(angle2, diameter)
     totalCost += pipeCost(pipeGrade, diameter, (siteDictionary[userInput['site']]['length'] + depth))
+    totalCost += wallCost(area, depth)
     
     if site == 1:
         totalCost += site1cost(reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity))
     else:
         totalCost += site3cost(reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity))
     return totalCost
+ 
 # running cost equation
 print('The cost on site', userInput['site'], 'is', masterCost(
     pumpGrade,    siteDictionary[userInput['site']]['performanceRating'], velocityIn(pumpFlow, pipeDiameter), 
     turbineGrade, siteDictionary[userInput['site']]['performanceRating'], velocityOut(turbineFlow, pipeDiameter), 
     siteDictionary[userInput['site']]['angle1'], siteDictionary[userInput['site']]['angle2'], pipeGrade, pipeDiameter,
-    siteDictionary[userInput['site']]['length'], depth, userInput['site']
+    siteDictionary[userInput['site']]['length'], depth, userInput['site'], reservoirArea(mass(turbineFlow, waterDensity, fillTime), waterDensity)
     ))
 # running big equation
-energyIn = mwh(energyIn(joules(energyOut), pipes[pipeGrade]['frictionFactor'], siteDictionary[userInput['site']]['performanceRating'], pipeDiameter, bendConstant1, bendConstant2, bendConstant3, 
+mwhIn = mwh(energyIn(joules(energyOut), pipes[pipeGrade]['frictionFactor'], siteDictionary[userInput['site']]['performanceRating'], pipeDiameter, bendConstant1, bendConstant2,  
+               mass(turbineFlow, waterDensity, fillTime), pumpEfficiency, turbineEfficiency, 
+               velocityIn(pumpFlow, pipeDiameter), velocityOut(turbineFlow, pipeDiameter),
+               ))
+efficiency = efficiency(energyOut, mwhIn)
+print('In site', userInput['site'], 'the system is', round(efficiency, 2), '% efficient and requires', round(energyIn, 2), 'mwh.')
+
+# computer killing for loops
+
+mwhIn2 = mwh(energyIn(joules(energyOut), pipes[pipeGrade]['frictionFactor'], siteDictionary[userInput['site']]['performanceRating'], pipeDiameter, bendConstant1, bendConstant2,  
                mass(turbineFlow, waterDensity, fillTime), pumpEfficiency, turbineEfficiency, 
                velocityIn(pumpFlow, pipeDiameter), velocityOut(turbineFlow, pipeDiameter),
                ))
 efficiency = efficiency(energyOut, energyIn)
-print('In site', userInput['site'], 'The system is', round(efficiency, 2), '% efficient and requires', round(energyIn, 2), 'mwh.')
+print('In site', userInput['site'], 'the system is', round(efficiency, 2), '% efficient and requires', round(energyIn, 2), 'mwh.')
