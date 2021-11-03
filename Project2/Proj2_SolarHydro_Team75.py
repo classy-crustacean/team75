@@ -126,13 +126,6 @@ def joules(mwh):
 def seconds(hours):
     return hours * 60 * 60
 
-# honestly i dont know what this is
-def calcEfficiency(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2):
-    print(Eout, p, t, Qt, Qp, Nt, Np, g, f, L, D, E1, E2)
-
- 
-    return 
-
 # cost calculations
 def pumpCost(pumpGrade, performanceRatingUp, flowRateUp):
     cost = flowRateUp * (pumps[pumpGrade][performanceRatingUp])
@@ -171,7 +164,7 @@ def wallCost(reservoirArea, height):
         costPerMeter = 30 + 60 + 95 + 135 + 180 + (depth - 15) * (70)/(2.5)
     else:
         costPerMeter = 30 + 60 + 95 + 135 + 180 + 250 + (depth - 17.5) * (90)/(2.5)
-    return costPerMeter
+    return costPerMeter * circumference
 
 # site 1 calculations for site specific costs
 def site1cost(reservoirArea):
@@ -181,7 +174,7 @@ def site1cost(reservoirArea):
     cost += 100000 # pumphouse
     cost += (reservoirArea * .25) # reservoir area
     cost += 10000 # random testing 
-    cost += 67 * 500 # pipe installation on ground
+    cost += 67.08 * 500 # pipe installation on ground
     return cost
 
 # site 3 calculations for site specific costs
@@ -191,7 +184,7 @@ def site3cost(reservoirArea):
     cost += 150000 # access road
     cost += 100000 # pumphouse
     cost += (reservoirArea * .3) # reservoir area development
-    cost += (reservoirArea * 1.6) # tree replanting
+    cost += (reservoirArea * 1.6 * .2) # tree replanting
     cost += 118.2 * 500 # pipe installation on ground
     cost += 1381 * 250 # pipe installation off of ground
     return cost
