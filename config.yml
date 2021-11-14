@@ -1,7 +1,6 @@
 # Motors
 right drive motor: D
 left drive motor: B
-front drive motor: A
 latch motor: C
 
 # GrovePi Sensors

@@ -11,24 +11,21 @@ import adafruit_mcp3xxx.mcp3008 as MCP
 from adafruit_mcp3xxx.analog_in import AnalogIn
 
 class MACRO:
-    config = 0
-    rightMotor = 0
-    leftMotor = 0
-    frontMotor = 0
-    latchMotor = 0
-    lineFinderCount = 4
-    lineFollowProcess = 0
-    goal = 64
+    config = None
+    rightMotor = None
+    leftMotor = None
+    latchMotor = None
+    lineFollowProcess = None
+    goal = None
     bias = mlt.Value('i', 0)
-    lastPosition = mlt.Value('d', 0)
     lineSensors = []
-    threshold = 0
+    threshold = None
     mcp = None
     def __init__(self, BP, config):
         self.config = config
         self.rightMotor = Motor(BP, config['right drive motor'], diameter=config['rear wheel diameter'])
         self.leftMotor = Motor(BP, config['left drive motor'], diameter=config['rear wheel diameter'])
-        self.frontMotor = Motor(BP, config['front drive motor'], diameter=config['front wheel diameter'])
+        self.latchMotor = Motor(BP, config['latch motor'])
         self.threshold = config['threshold']
 
         self.mcp = initMCP(0, 0)
@@ -106,9 +103,18 @@ class MACRO:
         integral = 0
         derivative = 0
         delay = 0.02
+        branching = False
         while True:
             linePositions = self.getLinePositions()
             if (len(linePositions) != 0):
+                # when we start branching, set branching to true
+                if (len(linePositions) > 1 and branching == False):
+                    branching = True
+                # when branching is finished, set branching to false are return to unbiased following
+                elif (len(linePositions) == 1 and branching == True):
+                    branching = False
+                    self.bias.value = 0
+
                 if (self.bias.value == 0):
                     position = sum(linePositions) / len(linePositions)
                 elif (self.bias.value == 1):
@@ -128,8 +134,11 @@ class MACRO:
     def followLine(self, bias = 0):
         self.bias.value = bias
         if ( __name__ == '__main__'):
-            if (self.lineFollowProcess == 0):
+            if (self.lineFollowProcess == None):
                 self.lineFollowProcess = mlt.Process(target=self.followLineLoop)
+    
+    def setBias(self, bias):
+        self.bias.value = bias
 
 class Motor:
     direction = 1
