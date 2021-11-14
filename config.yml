@@ -1,17 +1,13 @@
 # Motors
-right drive motor: D
-left drive motor: B
+right drive motor: A
+left drive motor: D
 latch motor: C
 
 # GrovePi Sensors
 hall effect sensor: 5
 ultrasonic sensor: 6
 line finders:
-  - 2
-  - 3
 line finder positions:
-  - 0
-  - 9
 
 # BrickPi Sensors
 touch sensor: 4
@@ -27,6 +23,7 @@ ir sensors:
   - 6
   - 7
 ir positions:
+  - 0
   - 1
   - 2
   - 3
@@ -34,7 +31,6 @@ ir positions:
   - 5
   - 6
   - 7
-  - 8
 
 # Dimensions, measured in mm
 rear wheel diameter: 60

@@ -4,11 +4,7 @@ import time
 import math
 import numpy as np
 import multiprocessing as mlt
-import busio
-import digitalio
-import board
-import adafruit_mcp3xxx.mcp3008 as MCP
-from adafruit_mcp3xxx.analog_in import AnalogIn
+from MCP3008 import MCP3008
 
 class MACRO:
     config = None
@@ -21,6 +17,7 @@ class MACRO:
     lineSensors = []
     threshold = None
     mcp = None
+    BP = None
     def __init__(self, BP, config):
         self.config = config
         self.rightMotor = Motor(BP, config['right drive motor'], diameter=config['rear wheel diameter'])
@@ -31,6 +28,7 @@ class MACRO:
         self.mcp = initMCP(0, 0)
 
         self.initLineSensors()
+        self.BP = BP
 
     
     
@@ -44,27 +42,38 @@ class MACRO:
         posIR = self.config['ir positions']
         lf = 0
         ir = 0
+        if (portsLF != None and portsIR != None):
+            while (lf < len(portsLF) and ir < len(portsIR)):
+                if (min(posLF[lf:]) < min(posIR[ir:])):
+                    sensors.append(LineFinder(portsLF[lf], posLF[lf], maxValue))
+                    lf += 1
+                else:
+                    sensors.append(IRSensor(self.mcp, portsIR[ir], posIR[ir], maxValue))
+                    ir += 1
+            
+            while (lf < len(portsLF) or ir < len(portsIR)):
+                if (lf < len(portsLF)):
+                    sensors.append(LineFinder(portsLF[lf], posLF[lf], maxValue))
+                    maxPosition = posLF[lf]
+                    lf += 1
+                else:
+                    sensors.append(IRSensor(self.mcp, portsIR[ir], posIR[ir], maxValue))
+                    maxPosition = posIR[ir]
+                    ir += 1
 
-        while (lf < len(portsLF) and ir < len(portsIR)):
-            if (min(posLF[lf:]) < min(posIR[ir:])):
-                sensors.append(LineFinder(portsLF[lf], posLF[lf], maxValue))
-                lf += 1
-            else:
-                sensors.append(IRSensor(self.mcp, portsIR[ir], posIR[ir], maxValue))
-                ir += 1
-        
-        while (lf < len(portsLF) or ir < len(portsIR)):
-            if (lf < len(portsLF)):
-                sensors.append(LineFinder(portsLF[lf], posLF[lf], maxValue))
-                maxPosition = posLF[lf]
-                lf += 1
-            else:
+        elif (portsIR != None):
+            while (ir < len(portsIR)):
                 sensors.append(IRSensor(self.mcp, portsIR[ir], posIR[ir], maxValue))
                 maxPosition = posIR[ir]
                 ir += 1
-
-        self.lineSensors = sensors
+        elif (portsLF != None):
+            while (lf < len(portsLF)):
+                sensors.append(LineFinder(portsLF[lf], posLF[lf], maxValue))
+                maxPosition = posLF[lf]
+                lf += 1
         self.goal = maxPosition / 2
+        self.lineSensors = sensors
+
         
     # I based a lot of my position code on http://robotresearchlab.com/2019/03/13/build-a-custom-pid-line-following-robot-from-scratch/#Programming_the_motors
     def getLinePositions(self):
@@ -85,6 +94,8 @@ class MACRO:
                 # reset num and sum
                 num = 0
                 sum = 0
+        if (sum != 0):
+            lines.append(num / sum)
 
         return lines
 
@@ -121,6 +132,7 @@ class MACRO:
                     position = min(linePositions)
                 elif (self.bias.value == 2):
                     position = max(linePositions)
+            print(position)
             error = self.goal - position
             integral = integral + error * delay
             derivative = (error - lastError) / delay
@@ -133,12 +145,17 @@ class MACRO:
 
     def followLine(self, bias = 0):
         self.bias.value = bias
-        if ( __name__ == '__main__'):
-            if (self.lineFollowProcess == None):
-                self.lineFollowProcess = mlt.Process(target=self.followLineLoop)
+        if (self.lineFollowProcess == None):
+            self.lineFollowProcess = mlt.Process(target=self.followLineLoop)
+            self.lineFollowProcess.start()
     
     def setBias(self, bias):
         self.bias.value = bias
+
+    def terminate(self):
+        self.lineFollowProcess.terminate()
+        self.lineFollowProcess.join()
+        self.BP.reset_all()
 
 class Motor:
     direction = 1
@@ -222,23 +239,13 @@ class Motor:
             print(error)
 
 def initMCP(bus, chip):
-    spiPins = {0: {'clock': board.SCK0,
-                   'MOSI': board.MOSI0,
-                   'MISO': board.MISO0,
-                   'CE': {0: board.CE0, 1: board.CE0_1}},
-               1: {'clock': board.SCK1,
-                   'MOSI': board.MOSI1,
-                   'MISO': board.MISO1,
-                   'CE': {0: board.CE1, 1: board.CE1_1}}}
-    spi = busio.SPI(clock = spiPins[bus]['clock'], MOSI = spiPins[bus]['MOSI'], MISO = spiPins[bus]['MISO'])
-    cs = digitalio.DigitalInOut(spiPins[bus]['CE'][chip])
-    mcp = MCP.MCP3008(spi, cs)
+    mcp = MCP3008(bus = 0, device = 0)
     return mcp
 
 # Template class for all sensor classes
 class Sensor:
     def getValue(self):
-        raise NotImplementedError(f"Please implement getValue in {type(self)}")
+        raise NotImplementedError("Please implement getValue in", type(self))
 
 # Template class for all LEGO sensors
 class LEGOSensor(Sensor):
@@ -261,12 +268,14 @@ class GroveSensor(Sensor):
 
 class AnalogSensor(Sensor):
     channel = None
+    mcp = None
 
     def __init__(self, mcp, channel):
-        self.channel = AnalogIn(mcp, channel)
+        self.channel = channel
+        self.mcp = mcp
     
     def getValue(self):
-        return self.channel.value
+        return(self.mcp.read(channel = self.channel))
         
 # Template class for all sensors that are used to detect lines
 class LineSensor(Sensor):
@@ -277,15 +286,15 @@ class LineSensor(Sensor):
         self.maxValue = maxValue
     
     def getLineValue(self):
-        raise NotImplementedError(f"Please implement getLineValue in {type(self)}")
+        raise NotImplementedError("Please implement getLineValue in", type(self))
     
     def readLine(self):
         return {'value': self.getLineValue(), 'position': self.position}
     
 class IRSensor(AnalogSensor, LineSensor):
     def __init__(self, mcp, channel, position, maxValue):
-        super(AnalogSensor, self).__init__(mcp, channel)
-        super(LineSensor, self).__init__(position, maxValue)
+        AnalogSensor.__init__(self, mcp, channel)
+        LineSensor.__init__(self, position, maxValue)
     
     def getLineValue(self):
         return self.maxValue - self.getValue()
@@ -299,7 +308,7 @@ class touchSensor(LEGOSensor):
             self.BP.set_sensor_type(self.port, self.BP.SENSOR_TYPE.TOUCH)
             time.sleep(0.02)
         except brickpi3.SensorError:
-            print(f"Configuring touch sensor in port {self.port}")
+            print("Configuring touch sensor in port", self.port)
             error = True
             while error:
                 time.sleep(0.05)
@@ -313,7 +322,7 @@ class touchSensor(LEGOSensor):
         try:
             return self.BP.get_sensor(self.port)
         except IOError as error:
-            print(f"Error reading from touch sensor in port {self.port}")
+            print("Error reading from touch sensor in port", self.port)
             print(error)
 
 # Class for LEGO color sensor used to find line
@@ -325,7 +334,7 @@ class ColorLineSensor(LEGOSensor, LineSensor):
             self.BP.set_sensor_type(self.port, self.BP.SENSOR_TYPE.EV3_COLOR_REFLECTED)
             time.sleep(0.02)
         except brickpi3.SensorError:
-            print(f"Configuring color sensor in port {self.port}")
+            print("Configuring color sensor in port", self.port)
             error = True
             while error:
                 time.sleep(0.05)
@@ -339,7 +348,7 @@ class ColorLineSensor(LEGOSensor, LineSensor):
         try:
             return self.BP.get_sensor(self.port)
         except brickpi3.SensorError as error:
-            print(f"Error reading value of color sensor in port {self.port}")
+            print("Error reading value of color sensor in port", self.port)
             print(error)
     
     def getLineValue(self):
@@ -357,7 +366,7 @@ class LineFinder(GroveSensor, LineSensor):
         try:
             return grovepi.digitalRead(self.port)
         except IOError as error:
-            print(f"Error reading value of line finder in port D{self.port}")
+            print("Error reading value of line finder in port D" + str(self.port))
             print(error)
     
     def getLineValue(self):
@@ -387,7 +396,7 @@ class ColorSensor(LEGOSensor):
             self.BP.set_sensor_type(self.port, self.BP.SENSOR_TYPE.EV3_COLOR_COLOR)
             time.sleep(0.02)
         except brickpi3.SensorError:
-            print(f"Configuring color sensor in port {self.port}")
+            print("Configuring color sensor in port", self.port)
             error = True
             while error:
                 time.sleep(0.05)
