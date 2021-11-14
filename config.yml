@@ -12,18 +12,30 @@ line finders:
   - 3
 line finder positions:
   - 0
-  - 6
+  - 9
 
 # BrickPi Sensors
 touch sensor: 4
-color line sensors:
+
+# Analog Sensors
+ir sensors:
+  - 0
   - 1
   - 2
   - 3
-color line sensor positions:
+  - 4
+  - 5
+  - 6
+  - 7
+ir positions:
+  - 1
   - 2
   - 3
   - 4
+  - 5
+  - 6
+  - 7
+  - 8
 
 # Dimensions, measured in mm
 rear wheel diameter: 60
@@ -34,4 +46,4 @@ Kp: 0.1
 Ki: 0.1
 Kd: 0.1
 base motor power: 50
-max line value: 64
+threshold: 100
