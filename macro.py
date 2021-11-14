@@ -91,32 +91,6 @@ class MACRO:
 
         return lines
 
-    def getPositionUnbiased(self, lastPosition):
-        linePositions = self.getLinePositions()
-
-        # if there are lines detected, set the position value as the average of them
-        if (len(linePositions) != 0):
-            lastPosition = sum(linePositions) / len(linePositions)
-        
-        return lastPosition
-    
-    def getPositionRightBias(self, lastPosition):
-        linePositions = self.getLinePositions()
-
-        # if there are lines detected, set the position to the rightmost line
-        if (len(linePositions) != 0):
-            lastPosition = max(linePositions)
-        
-        return lastPosition
-
-    def getPositionLeftBias(self, lastPosition):
-        linePositions = self.getLinePositions()
-
-        # if there are lines detected set the position to the leftmost line
-        if (len(linePositions) != 0):
-            lastPosition = min(linePositions)
-        
-        return lastPosition
 
     def followLineLoop(self):
         Kp = self.config['Kp']
@@ -133,12 +107,14 @@ class MACRO:
         derivative = 0
         delay = 0.02
         while True:
-            if (self.bias.value == 0):
-                position = self.getPositionUnbiased(position)
-            elif (self.bias.value == 1):
-                position = self.getPositionLeftBias(position)
-            elif (self.bias.value == 2):
-                position = self.getPositionRightBias(position)
+            linePositions = self.getLinePositions()
+            if (len(linePositions) != 0):
+                if (self.bias.value == 0):
+                    position = sum(linePositions) / len(linePositions)
+                elif (self.bias.value == 1):
+                    position = min(linePositions)
+                elif (self.bias.value == 2):
+                    position = max(linePositions)
             error = self.goal - position
             integral = integral + error * delay
             derivative = (error - lastError) / delay
