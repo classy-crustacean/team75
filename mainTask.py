@@ -1,21 +1,15 @@
-import time
+from time import sleep
 from brickpi3 import *
 from getConfig import *
-from lineFollowing import *
+from macro import *
 
 BP = BrickPi3()
-ports = getPorts(BP)
+config = getConfig()
 
-LF = lineFollower(BP, ports)
+macro = MACRO(BP, config)
 
-targets = [1,2,3]
-
-for target in targets:
-    for i in range(0,target):
-        time.sleep(0.5)
-        LF.followLine()
-    LF.branch()
-    LF.followLine()
-    LF.dropOff()
-    LF.followLine()
-    LF.restart()
+try:
+    while True:
+        print(macro.getLinePositions())
+except KeyboardInterrupt:
+    macro.terminate()

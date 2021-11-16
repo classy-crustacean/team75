@@ -1,3 +1,4 @@
+from MPU9250 import MPU9250
 import brickpi3
 import grovepi
 import time
@@ -18,6 +19,9 @@ class MACRO:
     threshold = None
     mcp = None
     BP = None
+    numLines = mlt.Value('i', 0)
+    imu = None
+
     def __init__(self, BP, config):
         self.config = config
         self.rightMotor = Motor(BP, config['right drive motor'], diameter=config['rear wheel diameter'])
@@ -29,6 +33,7 @@ class MACRO:
 
         self.initLineSensors()
         self.BP = BP
+        self.imu = IMU_Magnet()
 
     
     
@@ -96,6 +101,8 @@ class MACRO:
                 sum = 0
         if (sum != 0):
             lines.append(num / sum)
+        
+        self.numLines.value = len(lines)
 
         return lines
 
@@ -114,20 +121,11 @@ class MACRO:
         integral = 0
         derivative = 0
         delay = 0.02
-        branching = False
         while True:
             linePositions = self.getLinePositions()
             if (len(linePositions) != 0):
-                # when we start branching, set branching to true
-                if (len(linePositions) > 1 and branching == False):
-                    branching = True
-                # when branching is finished, set branching to false are return to unbiased following
-                elif (len(linePositions) == 1 and branching == True):
-                    branching = False
-                    self.bias.value = 0
-
                 if (self.bias.value == 0):
-                    position = sum(linePositions) / len(linePositions)
+                    position = linePositions[int(len(linePositions) / 2)]
                 elif (self.bias.value == 1):
                     position = min(linePositions)
                 elif (self.bias.value == 2):
@@ -406,3 +404,17 @@ class ColorSensor(LEGOSensor):
                 except brickpi3.SensorError:
                     error = True
 
+class IMU_Magnet(Sensor):
+    mpu = None
+
+    def __init__(self):
+        self.mpu = MPU9250()
+    
+    # returns the distance from the magnet
+    def getValue(self):
+        mag = self.getXYZ()
+        return math.sqrt(math.pow(mag['x'], 2) + math.pow(mag['y'], 2) + math.pow(mag['z'], 2))
+    
+    # returns the x, y, and z coordinates of the detected magnet
+    def getXYZ(self):
+        return self.mpu.readMagnet()
