@@ -37,8 +37,8 @@ rear wheel diameter: 60
 front wheel diameter: 60
 
 # PID
-Kp: 0.1
-Ki: 0.1
-Kd: 0.1
+Kp: 10
+Ki: 0
+Kd: 0
 base motor power: 50
 threshold: 100
