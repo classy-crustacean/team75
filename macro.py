@@ -33,7 +33,10 @@ class MACRO:
 
         self.initLineSensors()
         self.BP = BP
-        self.imu = IMU_Magnet()
+        try:
+            self.imu = IMU_Magnet()
+        except IOError:
+            print("There is no IMU connected")
 
     
     
@@ -130,7 +133,6 @@ class MACRO:
                     position = min(linePositions)
                 elif (self.bias.value == 2):
                     position = max(linePositions)
-            print(position)
             error = self.goal - position
             integral = integral + error * delay
             derivative = (error - lastError) / delay
@@ -149,10 +151,18 @@ class MACRO:
     
     def setBias(self, bias):
         self.bias.value = bias
+        print("bias:", bias)
 
-    def terminate(self):
+    def stop(self):
         self.lineFollowProcess.terminate()
         self.lineFollowProcess.join()
+        self.leftMotor.setPower(0)
+        self.rightMotor.setPower(0)
+
+    def terminate(self):
+        if (self.lineFollowProcess != None):
+            self.lineFollowProcess.terminate()
+            self.lineFollowProcess.join()
         self.BP.reset_all()
 
 class Motor:
@@ -413,8 +423,9 @@ class IMU_Magnet(Sensor):
     # returns the distance from the magnet
     def getValue(self):
         mag = self.getXYZ()
-        return math.sqrt(math.pow(mag['x'], 2) + math.pow(mag['y'], 2) + math.pow(mag['z'], 2))
+        return math.sqrt(math.pow(mag['x'], 2) + math.pow(mag['y'], 2))
     
     # returns the x, y, and z coordinates of the detected magnet
     def getXYZ(self):
         return self.mpu.readMagnet()
+
