@@ -26,7 +26,7 @@ class MACRO:
         self.config = config
         self.rightMotor = Motor(BP, config['right drive motor'], diameter=config['rear wheel diameter'])
         self.leftMotor = Motor(BP, config['left drive motor'], diameter=config['rear wheel diameter'])
-        self.latchMotor = Motor(BP, config['latch motor'])
+        self.latchMotor = Motor(BP, config['latch motor'], diameter=config['dia pitch latch gear'])
         self.threshold = config['threshold']
 
         self.mcp = initMCP(0, 0)
@@ -149,11 +149,25 @@ class MACRO:
     
     def setBias(self, bias):
         self.bias.value = bias
+    
+    def stop(self):
+        self.lineFollowProcess.terminate()
+        self.lineFollowProcess.join()
+        self.leftMotor.setPower(0)
+        self.rightMotor.setPower(0)
 
     def terminate(self):
         self.lineFollowProcess.terminate()
         self.lineFollowProcess.join()
         self.BP.reset_all()
+    
+    def dropCargo(self):
+        self.latchMotor.setMMPS(10)
+        time.sleep(5)
+        self.latchMotor.setMMPS(0)
+    
+    def reset(self):
+        self.latchMotor.float()
 
 class Motor:
     direction = 1
@@ -233,6 +247,12 @@ class Motor:
         try:
             self.BP.set_motor_position_relative(self.port, self.mmdeg(millimeters))
             self.position = self.BP.get_motor_encoder(self.port)
+        except IOError as error:
+            print(error)
+    
+    def float(self):
+        try:
+            self.BP.set_motor_power(self.port, self.BP.MOTOR_FLOAT)
         except IOError as error:
             print(error)
 
