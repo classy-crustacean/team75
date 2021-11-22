@@ -5,30 +5,46 @@ from getConfig import getConfig
 
 macro = MACRO(BrickPi3(), getConfig())
 
-zones = {1: 1, 2: 2, 3: 1}
+zones = {1: 1,
+         2: 0,
+         3: 1}
 
 target = 1
 
 try:
-    macro.followLine()
-    for i in range(target - 1):
-        macro.setBias(zones[i + 1] % 2 + 1)
+    macro.followLine(-1)
+    for i in range(1, target):
         print("awaiting magnet...")
-        while (macro.imu.getValue() < 70):
+        while (macro.imu.getValue() < 100):
             sleep(0.12)
         print("found magnet")
-        print("awaiting leaving magnet...")
+        macro.setBias(abs(zones[i] - 1))
+        sleep(1)
+        macro.setBias(-1)
+        print("passed zone", i )
+    while (macro.imu.getValue() < 100):
         sleep(0.12)
-        while (macro.imu.getValue() > 70):
-            sleep(0.12)
-        print("left magnet")
-        print("passed zone", i + 1)
-    macro.setBias(1)
-    while macro.imu.getValue() < 70:
+    macro.setBias(zones[target])
+    sleep(1)
+    macro.setBias(-1)
+    print("waiting for magnet")
+    while (macro.imu.getValue() < 100):
         sleep(0.12)
+    print("found drop off point")
+    print("waiting to pass magnet")
+    while (macro.imu.getValue() > 100):
+        sleep(0.12)
+    print("passed magnet")
     macro.stop()
     macro.releaseCargo()
-    macro.followLine(1)
+    print("dropped off cargo")
+    print("following line to end")
+    macro.followLine(-1)
+    sleep(1)
+    while (macro.imu.getValue() < 100):
+        sleep(0.12)
+    macro.stop()
+    macro.terminate()
     
-except KeyboardInterrupt:
+except:
     macro.terminate()

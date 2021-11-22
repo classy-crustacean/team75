@@ -1,16 +1,16 @@
 # Motors
-right drive motor: A
-left drive motor: D
-latch motor: C
+right drive motor: D
+left drive motor: A
+latch motor: B
 
 # GrovePi Sensors
 hall effect sensor: 5
-ultrasonic sensor: 6
 line finders:
 line finder positions:
 
 # BrickPi Sensors
 touch sensor: 4
+ultrasonic sensor: 3
 
 # Analog Sensors
 ir sensors:
@@ -35,10 +35,16 @@ ir positions:
 # Dimensions, measured in mm
 rear wheel diameter: 60
 front wheel diameter: 60
+dia pitch latch gear: 4
 
 # PID
-Kp: 10
+#Kp: 20
+#Ki: 0
+#Kd: 0
+#base motor power: 20
+Kp: 100
 Ki: 0
-Kd: 0
-base motor power: 50
-threshold: 100
+Kd: 10
+base motor speed: 100
+speed change: 300
+threshold: 70

@@ -26,7 +26,8 @@ class MACRO:
         self.config = config
         self.rightMotor = Motor(BP, config['right drive motor'], diameter=config['rear wheel diameter'])
         self.leftMotor = Motor(BP, config['left drive motor'], diameter=config['rear wheel diameter'])
-        self.latchMotor = Motor(BP, config['latch motor'], diameter=config['dia pitch latch gear'])
+        self.latchMotor = Motor(BP, config['latch motor'], diameter=config['dia pitch latch gear'], reverse = True)
+        #self.ultrasonic = EV3Ultrasonic(BP, config['ultrasonic sensor'])
         self.threshold = config['threshold']
 
         self.mcp = initMCP(0, 0)
@@ -84,12 +85,11 @@ class MACRO:
 
         
     # I based a lot of my position code on http://robotresearchlab.com/2019/03/13/build-a-custom-pid-line-following-robot-from-scratch/#Programming_the_motors
-    def getLinePositions(self):
+    def getLinePositions(self, readings):
         lines = []
         num = 0
         sum = 0
-        for sensor in self.lineSensors:
-            read = sensor.readLine()
+        for read in readings:
             # Add values to num and sum when sensor is above threshold
             if (read['value'] > self.threshold):
                 num += read['value'] * read['position']
@@ -102,19 +102,45 @@ class MACRO:
                 # reset num and sum
                 num = 0
                 sum = 0
+
         if (sum != 0):
             lines.append(num / sum)
         
         self.numLines.value = len(lines)
-
+        print(lines)
         return lines
+    
+    # I based a lot of my position code on http://robotresearchlab.com/2019/03/13/build-a-custom-pid-line-following-robot-from-scratch/#Programming_the_motors
+    def getLinePositionUnbiased(self, readings):
+        num = 0
+        sum = 0
+        for read in readings:
+            # Add values to num and sum when sensor is above threshold
+            if (read['value'] > self.threshold):
+                num += read['value'] * read['position']
+                sum += read['value']
+        if (sum != 0):
+            self.numLines.value = 1
+            return num / sum
+        else:
+            self.numLines.value = 0
+            return None
 
+    def getLineReadings(self):
+        readings = []
+
+        for sensor in self.lineSensors:
+            read = sensor.readLine()
+            if (read['value'] > self.threshold):
+                readings.append(read)
+        return readings
 
     def followLineLoop(self):
         Kp = self.config['Kp']
         Ki = self.config['Ki']
         Kd = self.config['Kd']
-        basePower = self.config['base motor power']
+        baseSpeed = self.config['base motor speed']
+        speedChange = self.config['speed change']
         leftMotor = self.leftMotor
         rightMotor = self.rightMotor
 
@@ -123,22 +149,34 @@ class MACRO:
         lastError = 0
         integral = 0
         derivative = 0
-        delay = 0.02
+        delay = 0.05
+        speedIncrease = 0
         while True:
-            linePositions = self.getLinePositions()
-            if (len(linePositions) != 0):
-                if (self.bias.value == 0):
-                    position = linePositions[int(len(linePositions) / 2)]
-                elif (self.bias.value == 1):
+            readings = self.getLineReadings()
+            if (self.bias.value == -1):
+                linePosition = self.getLinePositionUnbiased(readings)
+                if (self.numLines.value != 0):
+                    position = linePosition
+            elif (self.bias.value == 0):
+                linePositions = self.getLinePositions(readings)
+                if (len(linePositions) != 0):
                     position = min(linePositions)
-                elif (self.bias.value == 2):
+            elif (self.bias.value == 1):
+                linePositions = self.getLinePositions(readings)
+                if (len(linePositions) != 0):
                     position = max(linePositions)
             error = self.goal - position
             integral = integral + error * delay
             derivative = (error - lastError) / delay
             modifier = Kp * error + Ki * integral + Kd * derivative
-            leftMotor.setPower(basePower + modifier)
-            rightMotor.setPower(basePower - modifier)
+            if (abs(error) < 2):
+                speedIncrease = speedChange
+                print("increased")
+            else:
+                speedIncrease = 0
+            print(error)
+            leftMotor.setDPS(baseSpeed - modifier + speedIncrease)
+            rightMotor.setDPS(baseSpeed + modifier + speedIncrease)
 
             lastError = error
             time.sleep(delay)
@@ -166,9 +204,10 @@ class MACRO:
         self.BP.reset_all()
     
     def dropCargo(self):
-        self.latchMotor.setMMPS(10)
-        time.sleep(5)
-        self.latchMotor.setMMPS(0)
+        self.latchMotor.setDPS(600)
+        time.sleep(1)
+        self.latchMotor.setDPS(0)
+        self.latchMotor.float()
     
     def reset(self):
         self.latchMotor.float()
@@ -211,21 +250,22 @@ class Motor:
     
     def setPower(self, power):
         try:
-            self.BP.set_motor_power(self.port, power)
+            self.BP.set_motor_power(self.port, power * self.direction)
             self.power = power
         except IOError as error:
             print('error')
 
     def setPosition(self, position):
         try:
-            self.BP.set_motor_position(self.port, position)
+            self.BP.set_motor_position(self.port, self.position)
             self.position = position
         except IOError as error:
             print('error')
 
     def setDPS(self, dps):
+        print(dps)
         try:
-            self.BP.set_motor_dps(self.port, dps)
+            self.BP.set_motor_dps(self.port, dps * self.direction)
             self.dps = dps
             self.mmps = self.degmm(dps)
         except IOError as error:
@@ -234,9 +274,9 @@ class Motor:
     def setMMPS(self, mmps):
         try:
             dps = self.mmdeg(mmps)
-            self.BP.set_motor_dps(self.port, dps)
+            self.BP.set_motor_dps(self.port, dps * self.direction)
             self.mmps = mmps
-            self.dps - dps
+            self.dps = dps
         except IOError as error:
             print(error)
     
@@ -428,6 +468,30 @@ class ColorSensor(LEGOSensor):
                 except brickpi3.SensorError:
                     error = True
 
+class EV3Ultrasonic(LEGOSensor):
+    def __init__(self, BP, port):
+        super().__init__(BP, port)
+        try:
+            self.BP.set_sensor_type(self.port, self.BP.SENSOR_TYPE.EV3_ULTRASONIC_CM) # Configure for an EV3 ultrasonic sensor.
+            time.sleep(0.02)
+        except brickpi3.SensorError:
+            print("Configuring EV3 ultrasonic sensor in port", self.port)
+            error = True
+            while error:
+                time.sleep(0.05)
+                try:
+                    self.BP.get_sensor(self.port)
+                    error = False
+                except brickpi3.SensorError:
+                    error = True
+
+    def getValue(self):
+        try:
+            return self.BP.get_sensor(self.port)
+        except IOError as error:
+            print("Error reading from EV3 ultrasonic sensor in port", self.port)
+            print(error)
+
 class IMU_Magnet(Sensor):
     mpu = None
 
@@ -437,7 +501,7 @@ class IMU_Magnet(Sensor):
     # returns the distance from the magnet
     def getValue(self):
         mag = self.getXYZ()
-        return math.sqrt(math.pow(mag['x'], 2) + math.pow(mag['y'], 2))
+        return math.sqrt(math.pow(mag['z'], 2) + math.pow(mag['y'], 2))
     
     # returns the x, y, and z coordinates of the detected magnet
     def getXYZ(self):
