@@ -9,8 +9,8 @@
 # a general understanding of all aspects of its development 
 # and execution.  
 # 
-# RUNS THE ROBOT'S MOTORS AT A SET SPEED UNTIL STOPPED
-# This code adapted from 
+# RUNS THE ROBOT'S MOTORS AT A SET POWER UNTIL STOPPED
+# This code adapted from LEGO-motor_pow_from_input.py, created by the ENGR 16X teaching team
 
 import time
 import brickpi3
@@ -29,4 +29,5 @@ while(True):
         BP.set_motor_power(BP.PORT_D, userInput) 
       else:
         print("{:6d} is not between 0 and 100".format(userInput))
-      
+  except KeyboardInterrupt:
+    BP.reset_all()
