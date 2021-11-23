@@ -10,5 +10,23 @@
 # and execution.  
 # 
 # RUNS THE ROBOT'S MOTORS AT A SET SPEED UNTIL STOPPED
+# This code adapted from 
 
-#User input starting conditions
+import time
+import brickpi3
+
+#Innitiate the BrickPi object
+BP = brickpi3.BrickPi3()
+
+print("Set motor to power entered here (0-100)\nCtrl+C to end program\n")
+
+while(True):
+  try: 
+      userInput = float(input('Enter power: '))
+      
+      if (userInput > 0) and (userInput <= 100):
+        BP.set_motor_power(BP.PORT_A, userInput)
+        BP.set_motor_power(BP.PORT_D, userInput) 
+      else:
+        print("{:6d} is not between 0 and 100".format(userInput))
+      
