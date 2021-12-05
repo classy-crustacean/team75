@@ -120,10 +120,8 @@ class MACRO:
                 num += read['value'] * read['position']
                 sum += read['value']
         if (sum != 0):
-            self.numLines.value = 1
             return num / sum
         else:
-            self.numLines.value = 0
             return None
 
     def getLineReadings(self):
@@ -155,26 +153,24 @@ class MACRO:
             readings = self.getLineReadings()
             if (self.bias.value == -1):
                 linePosition = self.getLinePositionUnbiased(readings)
-                if (self.numLines.value != 0):
+                if (linePosition != None):
                     position = linePosition
             elif (self.bias.value == 0):
-                linePositions = self.getLinePositions(readings)
-                if (len(linePositions) != 0):
-                    position = min(linePositions)
+                linePosition = self.getLinePositionUnbiased(readings)
+                if (linePosition != None):
+                    position = linePosition - 3
             elif (self.bias.value == 1):
-                linePositions = self.getLinePositions(readings)
-                if (len(linePositions) != 0):
-                    position = max(linePositions)
+                linePosition = self.getLinePositionUnbiased(readings)
+                if (linePosition != None):
+                    position = linePosition + 3
             error = self.goal - position
             integral = integral + error * delay
             derivative = (error - lastError) / delay
             modifier = Kp * error + Ki * integral + Kd * derivative
             if (abs(error) < 2):
                 speedIncrease = speedChange
-                print("increased")
             else:
                 speedIncrease = 0
-            print(error)
             leftMotor.setDPS(baseSpeed - modifier + speedIncrease)
             rightMotor.setDPS(baseSpeed + modifier + speedIncrease)
 
@@ -183,6 +179,7 @@ class MACRO:
 
     def followLine(self, bias = 0):
         self.bias.value = bias
+        print(self.lineFollowProcess)
         if (self.lineFollowProcess == None):
             self.lineFollowProcess = mlt.Process(target=self.followLineLoop)
             self.lineFollowProcess.start()
@@ -192,8 +189,10 @@ class MACRO:
         print("bias:", bias)
 
     def stop(self):
-        self.lineFollowProcess.terminate()
-        self.lineFollowProcess.join()
+        if (self.lineFollowProcess != None):
+            self.lineFollowProcess.terminate()
+            self.lineFollowProcess.join()
+            self.lineFollowProcess = None
         self.leftMotor.setPower(0)
         self.rightMotor.setPower(0)
 
@@ -201,6 +200,7 @@ class MACRO:
         if (self.lineFollowProcess != None):
             self.lineFollowProcess.terminate()
             self.lineFollowProcess.join()
+            self.lineFollowProcess = None
         self.BP.reset_all()
     
     def dropCargo(self):
@@ -501,9 +501,17 @@ class IMU_Magnet(Sensor):
     # returns the distance from the magnet
     def getValue(self):
         mag = self.getXYZ()
-        return math.sqrt(math.pow(mag['z'], 2) + math.pow(mag['y'], 2))
+        x = mag['x']
+        if (mag['z'] < 20):
+            x = x * -1
+        if (x < 0):
+            return math.sqrt(math.pow(mag['x'], 2) + math.pow(mag['y'], 2))
+        elif (x > 0):
+            return math.sqrt(math.pow(mag['x'], 2) + math.pow(mag['y'], 2)) * -1
+
     
     # returns the x, y, and z coordinates of the detected magnet
     def getXYZ(self):
-        return self.mpu.readMagnet()
+        read = self.mpu.readMagnet()
+        return read
 
