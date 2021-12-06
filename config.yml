@@ -10,7 +10,6 @@ line finder positions:
 
 # BrickPi Sensors
 touch sensor: 4
-ultrasonic sensor: 3
 
 # Analog Sensors
 ir sensors:
@@ -33,8 +32,8 @@ ir positions:
   - 7
 
 # Dimensions, measured in mm
-rear wheel diameter: 60
-front wheel diameter: 60
+rear wheel diameter: 68
+rear wheel gear ratio: 1.66666666667
 dia pitch latch gear: 4
 
 # PID

@@ -24,8 +24,8 @@ class MACRO:
 
     def __init__(self, BP, config):
         self.config = config
-        self.rightMotor = Motor(BP, config['right drive motor'], diameter=config['rear wheel diameter'])
-        self.leftMotor = Motor(BP, config['left drive motor'], diameter=config['rear wheel diameter'])
+        self.rightMotor = Motor(BP, config['right drive motor'], diameter=config['rear wheel diameter'], gearRatio=config['rear wheel gear ratio'])
+        self.leftMotor = Motor(BP, config['left drive motor'], diameter=config['rear wheel diameter'], gearRatio=config['rear wheel gear ratio'])
         self.latchMotor = Motor(BP, config['latch motor'], diameter=config['dia pitch latch gear'], reverse = True)
         #self.ultrasonic = EV3Ultrasonic(BP, config['ultrasonic sensor'])
         self.threshold = config['threshold']
@@ -177,7 +177,7 @@ class MACRO:
             lastError = error
             time.sleep(delay)
 
-    def followLine(self, bias = 0):
+    def followLine(self, bias = -1):
         self.bias.value = bias
         print(self.lineFollowProcess)
         if (self.lineFollowProcess == None):
@@ -193,8 +193,8 @@ class MACRO:
             self.lineFollowProcess.terminate()
             self.lineFollowProcess.join()
             self.lineFollowProcess = None
-        self.leftMotor.setPower(0)
-        self.rightMotor.setPower(0)
+        self.leftMotor.setDPS(0)
+        self.rightMotor.setDPS(0)
 
     def terminate(self):
         if (self.lineFollowProcess != None):
@@ -211,6 +211,15 @@ class MACRO:
     
     def reset(self):
         self.latchMotor.float()
+    
+    def driveForward(self, speed, distance):
+        dps = (speed * 360 * self.config['rear wheel gear ratio']) / (self.config['rear wheel diameter'] * math.pi)
+        degs = (distance * 360 * self.config['rear wheel gear ratio']) / (self.config['rear wheel diameter'] * math.pi)
+        self.leftMotor.setDPS(dps)
+        self.rightMotor.setDPS(dps)
+        while (self.leftMotor.getPosition() < degs):
+            time.sleep(0.05)
+        self.stop()
 
 class Motor:
     direction = 1
@@ -255,13 +264,6 @@ class Motor:
         except IOError as error:
             print('error')
 
-    def setPosition(self, position):
-        try:
-            self.BP.set_motor_position(self.port, self.position)
-            self.position = position
-        except IOError as error:
-            print('error')
-
     def setDPS(self, dps):
         print(dps)
         try:
@@ -271,34 +273,14 @@ class Motor:
         except IOError as error:
             print(error)
     
-    def setMMPS(self, mmps):
-        try:
-            dps = self.mmdeg(mmps)
-            self.BP.set_motor_dps(self.port, dps * self.direction)
-            self.mmps = mmps
-            self.dps = dps
-        except IOError as error:
-            print(error)
-    
-    def rotateDegrees(self, degrees):
-        try:
-            self.BP.set_motor_position_relative(self.port, degrees)
-            self.position = self.BP.get_motor_encoder(self.port)
-        except IOError as error:
-            print(error)
-
-    def rotateMM(self, millimeters):
-        try:
-            self.BP.set_motor_position_relative(self.port, self.mmdeg(millimeters))
-            self.position = self.BP.get_motor_encoder(self.port)
-        except IOError as error:
-            print(error)
-    
     def float(self):
         try:
             self.BP.set_motor_power(self.port, self.BP.MOTOR_FLOAT)
         except IOError as error:
             print(error)
+    
+    def getPosition(self):
+        return self.BP.get_motor_encoder(self.port)
 
 def initMCP(bus, chip):
     mcp = MCP3008(bus = 0, device = 0)
