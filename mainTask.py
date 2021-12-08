@@ -5,7 +5,7 @@ from getConfig import getConfig
 from macro import MACRO
 
 
-sites = {'a': 1, 'b': 1, 'c': 1}
+sites = {'a': [1, 1], 'b': [1, 2], 'c': [1, 3]}
 
 macro = MACRO(BrickPi3(), getConfig())
 
@@ -14,7 +14,7 @@ def getTarget():
     while True:
         try:
             target = input("Input the target drop-off zone: ")
-            return {'pos': list(sites.keys()).index(target.lower()), 'bias': sites[target.lower()]}
+            return {'pos': sites[target.lower()][1], 'bias': sites[target.lower()][0]}
         except KeyboardInterrupt:
             raise KeyboardInterrupt
         except:
@@ -49,15 +49,21 @@ try:
         target = getTarget()
         print("position: %d\nbias: %d\n" % (target['pos'], target['bias']))
         input("place cargo in macro, then press any key to start")
-        macro.followLine(-1)
-        for i in range(target['pos']):
+        macro.followLine(0)
+
+        for i in range(0, target['pos']):
             waitForMagnet()
         macro.setBias(target['bias'])
+        sleep(0.13)
         waitForMagnet()
         macro.stop()
         macro.dropCargo()
-        macro.followLine(-1)
-        waitForMagnet()
+        macro.setBias(0)
+        sleep(0.13)
+        while (abs(macro.imu.getValue()) < 100):
+            sleep(0.13)
         macro.stop()
+
 except KeyboardInterrupt:
+    macro.terminate()
     print("\nDone!")

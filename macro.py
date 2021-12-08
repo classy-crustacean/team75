@@ -1,3 +1,6 @@
+# All men can see these tactics whereby I conquer, but what none can see is the
+# strategy out of which victory is evolved.
+
 from MPU9250 import MPU9250
 import brickpi3
 import grovepi
@@ -24,10 +27,9 @@ class MACRO:
 
     def __init__(self, BP, config):
         self.config = config
-        self.rightMotor = Motor(BP, config['right drive motor'], diameter=config['rear wheel diameter'], gearRatio=config['rear wheel gear ratio'])
-        self.leftMotor = Motor(BP, config['left drive motor'], diameter=config['rear wheel diameter'], gearRatio=config['rear wheel gear ratio'])
-        self.latchMotor = Motor(BP, config['latch motor'], diameter=config['dia pitch latch gear'], reverse = True)
-        #self.ultrasonic = EV3Ultrasonic(BP, config['ultrasonic sensor'])
+        self.rightMotor = Motor(BP, config['right drive motor'])
+        self.leftMotor = Motor(BP, config['left drive motor'])
+        self.latchMotor = Motor(BP, config['latch motor'], reverse = True)
         self.threshold = config['threshold']
 
         self.mcp = initMCP(0, 0)
@@ -38,6 +40,7 @@ class MACRO:
             self.imu = IMU_Magnet()
         except IOError:
             print("There is no IMU connected")
+
 
     
     
@@ -151,23 +154,14 @@ class MACRO:
         speedIncrease = 0
         while True:
             readings = self.getLineReadings()
-            if (self.bias.value == -1):
-                linePosition = self.getLinePositionUnbiased(readings)
-                if (linePosition != None):
-                    position = linePosition
-            elif (self.bias.value == 0):
-                linePosition = self.getLinePositionUnbiased(readings)
-                if (linePosition != None):
-                    position = linePosition - 3
-            elif (self.bias.value == 1):
-                linePosition = self.getLinePositionUnbiased(readings)
-                if (linePosition != None):
-                    position = linePosition + 3
-            error = self.goal - position
+            linePosition = self.getLinePositionUnbiased(readings)
+            if (linePosition != None):
+                position = linePosition
+            error = self.goal - position - 3 * self.bias.value
             integral = integral + error * delay
             derivative = (error - lastError) / delay
             modifier = Kp * error + Ki * integral + Kd * derivative
-            if (abs(error) < 2):
+            if ((abs(error) < 2) ):
                 speedIncrease = speedChange
             else:
                 speedIncrease = 0
@@ -177,7 +171,7 @@ class MACRO:
             lastError = error
             time.sleep(delay)
 
-    def followLine(self, bias = -1):
+    def followLine(self, bias = 0):
         self.bias.value = bias
         print(self.lineFollowProcess)
         if (self.lineFollowProcess == None):
@@ -213,8 +207,8 @@ class MACRO:
         self.latchMotor.float()
     
     def driveForward(self, speed, distance):
-        dps = (speed * 360 * self.config['rear wheel gear ratio']) / (self.config['rear wheel diameter'] * math.pi)
-        degs = (distance * 360 * self.config['rear wheel gear ratio']) / (self.config['rear wheel diameter'] * math.pi)
+        dps = (speed * 3600 * self.config['rear wheel gear ratio']) / (self.config['rear wheel diameter'] * math.pi)
+        degs = (distance * 3600 * self.config['rear wheel gear ratio']) / (self.config['rear wheel diameter'] * math.pi)
         self.leftMotor.setDPS(dps)
         self.rightMotor.setDPS(dps)
         while (self.leftMotor.getPosition() < degs):
@@ -226,15 +220,10 @@ class Motor:
     port = 0
     power = 0
     dps = 0
-    mmps = 0
-    position = 0
-    diameter = 2
-    degPermm = 1
-    mmPerdeg = 1
     BP = 0
     minPower = 0
     maxPower = 100
-    def __init__(self, BP, port, reverse = False, diameter = 2, minPower = 0, maxPower = 100):
+    def __init__(self, BP, port, reverse = False, minPower = 0, maxPower = 100):
         self.BP = BP
         self.port = {'A': BP.PORT_A,
                      'B': BP.PORT_B,
@@ -242,17 +231,9 @@ class Motor:
                      'D': BP.PORT_D}[port]
         if reverse:
             self.direction = -1
-        self.diameter = diameter
         self.minPower = minPower
         self.maxPower = maxPower
-        self.degPermm = 360 / math.pi / self.diameter
-        self.mmPerdeg = self.diameter * math.pi / 360
-    
-    def mmdeg(self, millimeters):
-        return millimeters * self.degPermm
-
-    def degmm(self, degrees):
-        return degrees * self.mmPerdeg
+        self.BP.offset_motor_encoder(self.port, self.BP.get_motor_encoder(self.port))
     
     def constrain(val, min_val, max_val):
         return min(max_val, max(min_val, val))
@@ -265,11 +246,9 @@ class Motor:
             print('error')
 
     def setDPS(self, dps):
-        print(dps)
         try:
             self.BP.set_motor_dps(self.port, dps * self.direction)
             self.dps = dps
-            self.mmps = self.degmm(dps)
         except IOError as error:
             print(error)
     
@@ -490,6 +469,8 @@ class IMU_Magnet(Sensor):
             return math.sqrt(math.pow(mag['x'], 2) + math.pow(mag['y'], 2))
         elif (x > 0):
             return math.sqrt(math.pow(mag['x'], 2) + math.pow(mag['y'], 2)) * -1
+        else:
+            return 0
 
     
     # returns the x, y, and z coordinates of the detected magnet
